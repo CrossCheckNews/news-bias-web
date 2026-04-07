@@ -1,18 +1,24 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, FileText } from 'lucide-react'
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { ChevronDown, FileText } from 'lucide-react';
 
-import { BottomNav } from '@/components/home/BottomNav'
-import { homeColumnClass, homePaddingXClass } from '@/components/home/homeLayout'
-import { getTopics } from '@/api/topics'
-import { cn } from '@/lib/utils'
-import type { TopicSummary } from '@/types'
+import { BottomNav } from '@/components/home/BottomNav';
+import {
+  homeColumnClass,
+  homePaddingXClass,
+} from '@/components/home/homeLayout';
+import { getTopics } from '@/api/topics';
+import { cn } from '@/lib/utils';
+import type { TopicSummary } from '@/types';
 
-const TODAY = new Date().toISOString().split('T')[0]
+const TABS = ['전체 주제', 'WORLD'] as const;
+type Tab = (typeof TABS)[number];
 
-const TABS = ['모바일 홈', '전체 주제'] as const
-type Tab = (typeof TABS)[number]
+const TAB_CATEGORY: Record<Tab, string | undefined> = {
+  '전체 주제': undefined,
+  WORLD: 'WORLD',
+};
 
 function TopicCard({ topic }: { topic: TopicSummary }) {
   return (
@@ -32,7 +38,9 @@ function TopicCard({ topic }: { topic: TopicSummary }) {
         {topic.title}
       </h3>
       {topic.description && (
-        <p className="mt-1.5 line-clamp-2 text-xs text-neutral-500">{topic.description}</p>
+        <p className="mt-1.5 line-clamp-2 text-xs text-neutral-500">
+          {topic.description}
+        </p>
       )}
       <div className="mt-4">
         <Link
@@ -43,7 +51,7 @@ function TopicCard({ topic }: { topic: TopicSummary }) {
         </Link>
       </div>
     </article>
-  )
+  );
 }
 
 function SkeletonCard() {
@@ -54,35 +62,44 @@ function SkeletonCard() {
       <div className="mt-2 h-3 w-full rounded bg-neutral-100" />
       <div className="mt-4 h-10 rounded-md bg-neutral-200" />
     </div>
-  )
+  );
 }
 
 export default function TopicListPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('모바일 홈')
-  const [sortDesc, setSortDesc] = useState(true)
-
-  const isHome = activeTab === '모바일 홈'
+  const [activeTab, setActiveTab] = useState<Tab>('전체 주제');
+  const [sortDesc, setSortDesc] = useState(true);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['topics', activeTab],
     queryFn: () =>
-      isHome
-        ? getTopics({ status: 'ACTIVE', date: TODAY })
-        : getTopics({ status: 'ACTIVE', page: 0, size: 20 }),
-  })
+      getTopics({
+        status: 'ACTIVE',
+        page: 0,
+        size: 20,
+        sort: 'createdAt,desc',
+        ...(TAB_CATEGORY[activeTab] ? { category: TAB_CATEGORY[activeTab] } : {}),
+      }),
+  });
 
-  const topics = data?.content ?? []
-  const sorted = sortDesc ? [...topics] : [...topics].reverse()
+  const topics = data?.content ?? [];
+  const sorted = sortDesc ? [...topics] : [...topics].reverse();
 
   return (
     <div className="min-h-dvh overflow-x-hidden bg-white text-neutral-900">
       <div className={cn(homeColumnClass, 'pb-24 sm:pb-28')}>
         {/* Header */}
-        <header className={cn('border-b border-neutral-200 bg-white pb-3 pt-4 sm:pt-5', homePaddingXClass)}>
+        <header
+          className={cn(
+            'border-b border-neutral-200 bg-white pb-3 pt-4 sm:pt-5',
+            homePaddingXClass,
+          )}
+        >
           <h1 className="font-cc-serif text-center text-lg font-bold tracking-tight text-black sm:text-xl">
             CROSSCHECK NEWS
           </h1>
-          <p className="mt-3 text-xs text-neutral-500 sm:text-sm">테마 콘텐츠 | 피드</p>
+          <p className="mt-3 text-xs text-neutral-500 sm:text-sm">
+            테마 콘텐츠 | 피드
+          </p>
           <h2 className="mt-1 text-xl font-bold tracking-tight text-neutral-900 sm:text-2xl">
             주요 주제
           </h2>
@@ -114,14 +131,25 @@ export default function TopicListPage() {
               className="mb-0.5 flex shrink-0 items-center gap-0.5 text-xs font-medium text-neutral-600"
             >
               {sortDesc ? '최신순' : '오래된순'}
-              <ChevronDown className={cn('size-3.5 transition-transform', !sortDesc && 'rotate-180')} />
+              <ChevronDown
+                className={cn(
+                  'size-3.5 transition-transform',
+                  !sortDesc && 'rotate-180',
+                )}
+              />
             </button>
           </div>
         </header>
 
         {/* Feed */}
-        <main className={cn('space-y-3 py-4 sm:space-y-4 sm:py-6', homePaddingXClass)}>
-          {isLoading && Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+        <main
+          className={cn(
+            'space-y-3 py-4 sm:space-y-4 sm:py-6',
+            homePaddingXClass,
+          )}
+        >
+          {isLoading &&
+            Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
 
           {isError && (
             <div className="py-12 text-center text-sm text-neutral-400">
@@ -131,7 +159,7 @@ export default function TopicListPage() {
 
           {!isLoading && !isError && sorted.length === 0 && (
             <div className="py-12 text-center text-sm text-neutral-400">
-              {isHome ? '오늘의 주제가 없습니다.' : '주제가 없습니다.'}
+              주제가 없습니다.
             </div>
           )}
 
@@ -142,5 +170,5 @@ export default function TopicListPage() {
       </div>
       <BottomNav />
     </div>
-  )
+  );
 }

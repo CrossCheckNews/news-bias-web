@@ -3,9 +3,11 @@ import apiClient from './client'
 
 export interface TopicListParams {
   status?: 'ACTIVE' | 'INACTIVE'
-  date?: string   // 'YYYY-MM-DD' — 오늘 날짜 기준 필터
+  date?: string   // 'YYYY-MM-DD' — 날짜 기준 필터
+  category?: string
   page?: number
   size?: number
+  sort?: string   // e.g. 'createdAt,desc'
 }
 
 export async function getTopics(params: TopicListParams = {}): Promise<TopicPage> {

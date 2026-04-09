@@ -1,13 +1,12 @@
-import type { Topic, TopicArticle, TopicPage, TopicSummary } from '@/types'
+import type { TopicDetail, TopicPage } from '@/types'
 import apiClient from './client'
 
 export interface TopicListParams {
   status?: 'ACTIVE' | 'INACTIVE'
-  date?: string   // 'YYYY-MM-DD' — 날짜 기준 필터
-  category?: string
+  date?: string   // 'YYYY-MM-DD'
   page?: number
   size?: number
-  sort?: string   // e.g. 'createdAt,desc'
+  sort?: string
 }
 
 export async function getTopics(params: TopicListParams = {}): Promise<TopicPage> {
@@ -15,12 +14,7 @@ export async function getTopics(params: TopicListParams = {}): Promise<TopicPage
   return data
 }
 
-export async function getTopic(id: number): Promise<Topic> {
-  const { data } = await apiClient.get<Topic>(`/api/v1/topics/${id}`)
-  return data
-}
-
-export async function getTopicArticles(id: number): Promise<TopicArticle[]> {
-  const { data } = await apiClient.get<TopicArticle[]>(`/api/v1/topics/${id}/articles`)
+export async function getTopic(id: number): Promise<TopicDetail> {
+  const { data } = await apiClient.get<TopicDetail>(`/api/v1/topics/${id}`)
   return data
 }

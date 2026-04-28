@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+# CrossCheckNews Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+뉴스 비교 서비스와 파이프라인 모니터링 대시보드를 제공하는 React/Vite 프론트엔드입니다.
 
-Currently, two official plugins are available:
+## 주요 화면
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `/` 파이프라인 대시보드
+- `/topics` 뉴스 토픽 목록
+- `/topics/:id` 토픽 상세 비교
+- `/admin/:secret/publishers` 언론사 관리
 
-## React Compiler
+## 대시보드 기능
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- 요약 카드: 전체 기사 수, 전체 토픽 수, 오늘 수집 기사 수, 실패 작업 수, 마지막 수집 시간
+- 최근 파이프라인 실행 이력 테이블
+- Recharts 기반 언론사별 기사 수 차트
+- 국가별 토픽 수, 파이프라인 결과 상태 도넛 차트
+- `/api/pipeline/stream` SSE 이벤트 기반 실시간 파이프라인 단계 표시
 
-## Expanding the ESLint configuration
+## 로컬 실행
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+백엔드는 demo profile로 실행하면 대시보드 샘플 데이터가 자동 생성됩니다.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd ../news-bias-api
+./gradlew bootRun --args='--spring.profiles.active=demo'
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+프론트엔드는 Vite dev server를 사용합니다.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+npm install
+npm run dev
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+데모 관리자 계정:
+
+```text
+username: admin
+password: admin1234
+```
+
+## 검증
+
+```bash
+npm run build
 ```

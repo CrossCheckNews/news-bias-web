@@ -58,7 +58,9 @@ function TopicStory({ topic }: { topic: TopicSummary }) {
               <span className="mt-0.5 w-[4.5rem] shrink-0 text-[10px] font-bold uppercase tracking-wide text-neutral-400">
                 {publisher}
               </span>
-              <p className="flex-1 text-sm leading-snug text-neutral-700">{text}</p>
+              <p className="flex-1 text-sm leading-snug text-neutral-700">
+                {text}
+              </p>
             </div>
           ))}
         </div>
@@ -71,7 +73,9 @@ function TopicStory({ topic }: { topic: TopicSummary }) {
       )}
 
       <div className="mt-4 flex items-center justify-between">
-        <span className="text-[11px] text-neutral-400">{topic.articleCount}개 기사</span>
+        <span className="text-[11px] text-neutral-400">
+          {topic.articleCount}개 기사
+        </span>
         <Link
           to={`/topics/${topic.id}`}
           className="text-[11px] font-bold uppercase tracking-wider text-neutral-900 hover:text-neutral-500"
@@ -107,7 +111,9 @@ function TopicRow({ topic }: { topic: TopicSummary }) {
             <div className="bg-blue-400" style={{ width: `${progPct}%` }} />
             <div className="bg-red-400" style={{ width: `${consPct}%` }} />
           </div>
-          <span className="text-[11px] text-neutral-400">{topic.articleCount}개 기사</span>
+          <span className="text-[11px] text-neutral-400">
+            {topic.articleCount}개 기사
+          </span>
         </div>
       </div>
       <span className="mt-0.5 shrink-0 text-neutral-300">›</span>
@@ -146,24 +152,42 @@ function SkeletonRow() {
 // ────────────────────────────────────────────────
 // Page
 // ────────────────────────────────────────────────
-export default function TopicListPage() {
+export default function PublisherListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab: Tab = searchParams.get('tab') === 'all' ? 'All' : "Today's News";
+  const activeTab: Tab =
+    searchParams.get('tab') === 'all' ? 'All' : "Today's News";
   const isHeadline = activeTab === "Today's News";
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteQuery({
-      queryKey: ['topics', activeTab],
-      queryFn: ({ pageParam }) =>
-        isHeadline
-          ? getTopics({ status: 'ACTIVE', page: pageParam, size: 20, sort: 'createdAt,desc', date: today() })
-          : getTopics({ status: 'ACTIVE', page: pageParam, size: 20, sort: 'createdAt,desc' }),
-      initialPageParam: 0,
-      getNextPageParam: (lastPage) =>
-        lastPage.last ? undefined : (lastPage.number ?? 0) + 1,
-    });
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['topics', activeTab],
+    queryFn: ({ pageParam }) =>
+      isHeadline
+        ? getTopics({
+            status: 'ACTIVE',
+            page: pageParam,
+            size: 20,
+            sort: 'createdAt,desc',
+            date: today(),
+          })
+        : getTopics({
+            status: 'ACTIVE',
+            page: pageParam,
+            size: 20,
+            sort: 'createdAt,desc',
+          }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) =>
+      lastPage.last ? undefined : (lastPage.number ?? 0) + 1,
+  });
 
   const topics = data?.pages.flatMap((p) => p.content) ?? [];
   const dateGroups = groupByDate(topics);
@@ -194,7 +218,10 @@ export default function TopicListPage() {
             <h1 className="font-cc-serif text-lg font-black tracking-[0.15em] text-black sm:text-xl">
               CROSSCHECK NEWS
             </h1>
-            <button type="button" className="text-neutral-600 hover:text-neutral-900">
+            <button
+              type="button"
+              className="text-neutral-600 hover:text-neutral-900"
+            >
               <Search className="size-5" />
             </button>
           </div>
@@ -251,7 +278,10 @@ export default function TopicListPage() {
           {/* ── Today's News: story cards ── */}
           {isHeadline && (
             <>
-              {isLoading && Array.from({ length: 4 }).map((_, i) => <SkeletonStory key={i} />)}
+              {isLoading &&
+                Array.from({ length: 4 }).map((_, i) => (
+                  <SkeletonStory key={i} />
+                ))}
               {topics.map((topic) => (
                 <TopicStory key={topic.id} topic={topic} />
               ))}
@@ -261,7 +291,10 @@ export default function TopicListPage() {
           {/* ── All: date-grouped compact rows ── */}
           {!isHeadline && (
             <>
-              {isLoading && Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
+              {isLoading &&
+                Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonRow key={i} />
+                ))}
               {dateGroups.map(([date, group]) => (
                 <section key={date}>
                   <div className="sticky top-0 z-10 -mx-4 bg-neutral-50 px-4 py-2 sm:-mx-6 sm:px-6">

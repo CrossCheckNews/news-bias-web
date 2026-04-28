@@ -15,8 +15,12 @@ export interface PublisherFormData {
   rssUrl: string
 }
 
-function isPoliticalLeaning(v: unknown): v is PoliticalLeaning {
-  return v === 'LEFT' || v === 'CENTER' || v === 'RIGHT'
+const LEANING_MAP: Record<string, PoliticalLeaning> = {
+  LEFT: 'LEFT',
+  CENTER: 'CENTER',
+  RIGHT: 'RIGHT',
+  PROGRESSIVE: 'LEFT',
+  CONSERVATIVE: 'RIGHT',
 }
 
 /** API가 `leaning` 등 예전 필드를 줄 때도 UI 모델로 통일 */
@@ -30,8 +34,8 @@ export function normalizePublisher(raw: unknown): Publisher {
     }
   }
   const r = raw as Record<string, unknown>
-  const pl = r.politicalLeaning ?? r.leaning
-  const politicalLeaning: PoliticalLeaning = isPoliticalLeaning(pl) ? pl : 'CENTER'
+  const pl = String(r.politicalLeaning ?? r.leaning ?? '')
+  const politicalLeaning: PoliticalLeaning = LEANING_MAP[pl] ?? 'CENTER'
   return {
     id: Number(r.id) || 0,
     name: String(r.name ?? ''),
@@ -43,7 +47,21 @@ export function normalizePublisher(raw: unknown): Publisher {
 }
 
 export async function getPublishers(params: PublisherListParams = {}): Promise<PublisherPage> {
-  const { data } = await apiClient.get<PublisherPage>('/api/v1/publishers', { params })
+  const { data } = await apiClient.get<unknown>('/api/v1/publishers', { params })
+
+  // 배열 응답 (non-paginated)
+  if (Array.isArray(data)) {
+    const content = data.map(normalizePublisher)
+    return {
+      content,
+      totalElements: content.length,
+      totalPages: 1,
+      number: 0,
+      size: content.length,
+    }
+  }
+
+  // 페이지 응답
   if (data == null || typeof data !== 'object') {
     return {
       content: [],
@@ -53,12 +71,16 @@ export async function getPublishers(params: PublisherListParams = {}): Promise<P
       size: params.size ?? 10,
     }
   }
-  const content = Array.isArray(data.content)
-    ? data.content.map((item) => normalizePublisher(item))
+  const page = data as Record<string, unknown>
+  const content = Array.isArray(page.content)
+    ? page.content.map(normalizePublisher)
     : []
   return {
-    ...data,
     content,
+    totalElements: Number(page.totalElements ?? content.length),
+    totalPages: Number(page.totalPages ?? 1),
+    number: Number(page.number ?? params.page ?? 0),
+    size: Number(page.size ?? params.size ?? 10),
   }
 }
 

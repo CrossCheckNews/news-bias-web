@@ -12,13 +12,19 @@ interface DonutChartProps {
 export default function DonutChart({ segments, centerLabel, centerSub, legend }: DonutChartProps) {
   const total = segments.reduce((sum, s) => sum + s.value, 0)
 
-  let cumulativeDash = 0
-  const arcs = segments.map((seg) => {
-    const dash = total > 0 ? (seg.value / total) * CIRCUMFERENCE : 0
-    const arc = { ...seg, dash, offset: -cumulativeDash }
-    cumulativeDash += dash
-    return arc
-  })
+  const { arcs } = segments.reduce<{
+    arcs: Array<DonutSegment & { dash: number; offset: number }>
+    cumulative: number
+  }>(
+    ({ arcs, cumulative }, seg) => {
+      const dash = total > 0 ? (seg.value / total) * CIRCUMFERENCE : 0
+      return {
+        arcs: [...arcs, { ...seg, dash, offset: -cumulative }],
+        cumulative: cumulative + dash,
+      }
+    },
+    { arcs: [], cumulative: 0 },
+  )
 
   return (
     <div className="flex flex-col">

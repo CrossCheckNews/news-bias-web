@@ -1,19 +1,15 @@
-import { AlertTriangle, CheckCircle2, Loader2, Play, TrendingUp } from 'lucide-react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { triggerPipelineCollect } from '@/api/pipeline'
+import { AlertTriangle, CheckCircle2, TrendingUp } from 'lucide-react'
 import ArticlesByPublisherChart from '@/components/dashboard/BarChart'
 import DonutChart from '@/components/dashboard/DonutChart'
 import MetricCard from '@/components/dashboard/MetricCard'
 import PipelineHistoryTable from '@/components/dashboard/PipelineHistoryTable'
 import PipelineOrchestration from '@/components/dashboard/PipelineOrchestration'
 import {
-  useActivePipeline,
   useArticlesByPublisher,
   useDashboardChartData,
   usePipelineHistory,
   usePipelineMetrics,
 } from '@/hooks/usePipeline'
-import type { ActivePipeline } from '@/types/pipeline'
 
 function MetricsSection() {
   const { data, isLoading } = usePipelineMetrics()
@@ -79,18 +75,10 @@ function MetricsSection() {
   )
 }
 
-function PipelineSection({ data, isLoading }: { data?: ActivePipeline; isLoading: boolean }) {
-  if (isLoading || !data) {
-    return (
-      <section className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
-        <div className="h-32 bg-slate-100 rounded animate-pulse" />
-      </section>
-    )
-  }
-
+function PipelineSection() {
   return (
     <section className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
-      <PipelineOrchestration pipelineId={data.pipelineId} steps={data.steps} />
+      <PipelineOrchestration />
     </section>
   )
 }
@@ -194,24 +182,11 @@ function HistorySection() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const queryClient = useQueryClient()
-  const activePipeline = useActivePipeline()
-
-  const { mutate: runPipeline, isPending } = useMutation({
-    mutationFn: () => triggerPipelineCollect(1),
-    onMutate: () => {
-      activePipeline.resetForNextRun()
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['pipeline'] })
-    },
-  })
-
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)]">
       <div className="flex-1 p-6 space-y-6 max-w-[1440px]">
         <MetricsSection />
-        <PipelineSection data={activePipeline.data} isLoading={activePipeline.isLoading} />
+        <PipelineSection />
         <ChartsSection />
         <HistorySection />
       </div>
@@ -223,17 +198,6 @@ export default function Dashboard() {
           <a className="hover:text-slate-700 transition-colors" href="#">System Health</a>
         </div>
       </footer>
-      <button
-        onClick={() => runPipeline()}
-        disabled={isPending || !activePipeline.isStreamReady}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-cc-slate text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center z-50 disabled:opacity-60 disabled:scale-100"
-        title={activePipeline.isStreamReady ? 'Run Pipeline' : 'Connecting pipeline stream'}
-      >
-        {isPending
-          ? <Loader2 className="w-6 h-6 animate-spin" />
-          : <Play className="w-7 h-7" fill="currentColor" />
-        }
-      </button>
     </div>
   )
 }

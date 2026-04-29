@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import apiClient from '@/api/client'
 import {
   getDashboardChartData,
   getPipelineHistory,
   getPipelineMetrics,
   mapStreamStatus,
+  subscribePipelineStream,
   triggerPipelineCollect,
 } from '@/api/pipeline'
 
@@ -123,5 +124,125 @@ describe('pipeline api adapter', () => {
     expect(mapStreamStatus('RUNNING')).toBe('RUNNING')
     expect(mapStreamStatus('SUCCESS')).toBe('SUCCESS')
     expect(mapStreamStatus('FAILED')).toBe('FAILED')
+  })
+
+  it('falls back to current time when lastCollectedAt is null', async () => {
+    const before = Date.now()
+    mockedGet.mockResolvedValue({
+      data: {
+        totalArticles: 0,
+        totalTopics: 0,
+        todayCollectedArticles: 0,
+        failedJobs: 0,
+        lastCollectedAt: null,
+        recentRuns: [],
+      },
+    })
+
+    const result = await getPipelineMetrics()
+    const after = Date.now()
+
+    const fetchedAt = new Date(result.lastFetchedAt).getTime()
+    expect(fetchedAt).toBeGreaterThanOrEqual(before)
+    expect(fetchedAt).toBeLessThanOrEqual(after)
+  })
+})
+
+// ─── subscribePipelineStream ────────────────────────────────────────────────
+
+type EventListenerFn = (e: MessageEvent) => void
+
+interface MockSourceShape {
+  onopen: (() => void) | null
+  onerror: (() => void) | null
+  close: ReturnType<typeof vi.fn>
+  listeners: Record<string, EventListenerFn[]>
+  addEventListener(type: string, listener: EventListenerFn): void
+  triggerOpen(): void
+  triggerEvent(type: string, data: string): void
+  triggerError(): void
+}
+
+function makeMockSource(): MockSourceShape {
+  const source: MockSourceShape = {
+    onopen: null,
+    onerror: null,
+    close: vi.fn(),
+    listeners: {},
+    addEventListener(type, listener) {
+      ;(this.listeners[type] ??= []).push(listener)
+    },
+    triggerOpen() {
+      this.onopen?.()
+    },
+    triggerEvent(type, data) {
+      this.listeners[type]?.forEach((l) => l({ data } as MessageEvent))
+    },
+    triggerError() {
+      this.onerror?.()
+    },
+  }
+  return source
+}
+
+describe('subscribePipelineStream', () => {
+  let mockSource: MockSourceShape
+
+  beforeEach(() => {
+    mockSource = makeMockSource()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.stubGlobal('EventSource', vi.fn(function () { return mockSource } as any))
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('connects to /api/pipeline/stream', () => {
+    subscribePipelineStream(vi.fn())
+    expect(vi.mocked(EventSource)).toHaveBeenCalledWith('/api/pipeline/stream')
+  })
+
+  it('calls onOpen when stream opens', () => {
+    const onOpen = vi.fn()
+    subscribePipelineStream(vi.fn(), onOpen)
+    mockSource.triggerOpen()
+    expect(onOpen).toHaveBeenCalledOnce()
+  })
+
+  it('parses pipeline events and passes them to onEvent callback', () => {
+    const onEvent = vi.fn()
+    subscribePipelineStream(onEvent, vi.fn())
+
+    const payload = {
+      pipelineRunId: 1,
+      step: 'RSS_COLLECT',
+      status: 'RUNNING',
+      message: 'collecting',
+      progress: 0,
+      emittedAt: '2026-04-29T10:00:00Z',
+    }
+    mockSource.triggerEvent('pipeline', JSON.stringify(payload))
+
+    expect(onEvent).toHaveBeenCalledOnce()
+    expect(onEvent).toHaveBeenCalledWith(payload)
+  })
+
+  it('calls onClose and closes the source on error', () => {
+    const onClose = vi.fn()
+    subscribePipelineStream(vi.fn(), vi.fn(), onClose)
+    mockSource.triggerError()
+
+    expect(onClose).toHaveBeenCalledOnce()
+    expect(mockSource.close).toHaveBeenCalledOnce()
+  })
+
+  it('calls onClose and closes the source when cleanup function is invoked', () => {
+    const onClose = vi.fn()
+    const cleanup = subscribePipelineStream(vi.fn(), vi.fn(), onClose)
+    cleanup()
+
+    expect(onClose).toHaveBeenCalledOnce()
+    expect(mockSource.close).toHaveBeenCalledOnce()
   })
 })

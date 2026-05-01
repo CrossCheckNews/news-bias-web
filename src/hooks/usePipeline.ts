@@ -5,6 +5,7 @@ import {
   getArticlesByPublisher,
   getDashboardChartData,
   getLatestRunDate,
+  getPipelineHistories,
   getPipelineHistory,
   getPipelineMetrics,
   mapStreamStatus,
@@ -109,6 +110,14 @@ export function usePipelineHistory() {
     queryKey: ['pipeline', 'history'],
     queryFn: getPipelineHistory,
     refetchInterval: 30_000,
+  })
+}
+
+export function usePipelineHistories(page: number, size = 20) {
+  return useQuery({
+    queryKey: ['pipeline', 'histories', page, size],
+    queryFn: () => getPipelineHistories(page, size),
+    placeholderData: (prev) => prev,
   })
 }
 

@@ -2,6 +2,7 @@ import apiClient from '@/api/client'
 import type {
   ActivePipeline,
   DashboardChartData,
+  PipelineHistoriesPage,
   PipelineHistoryRow,
   PipelineCollectResult,
   PipelineMetrics,
@@ -132,6 +133,16 @@ export async function getDashboardChartData(): Promise<DashboardChartData> {
 export interface LatestRunDate {
   runDate: string | null
   today: string
+}
+
+export async function getPipelineHistories(
+  page: number,
+  size = 20,
+): Promise<PipelineHistoriesPage> {
+  const { data } = await apiClient.get<PipelineHistoriesPage>('/api/v1/pipeline/histories', {
+    params: { page, size },
+  })
+  return data
 }
 
 export async function getLatestRunDate(): Promise<LatestRunDate> {

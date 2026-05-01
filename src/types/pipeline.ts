@@ -72,6 +72,31 @@ export interface DashboardChartData {
   pipelineResultStats: PipelineResultStats
 }
 
+export interface PipelineHistoryItem {
+  id: number
+  pipelineRunId: number
+  step: string
+  status: PipelineRunStatus
+  targetType?: string
+  targetName?: string
+  processedCount: number
+  errorType?: string
+  errorMessage?: string
+  message: string
+  startedAt: string
+  finishedAt?: string
+}
+
+export interface PipelineHistoriesPage {
+  content: PipelineHistoryItem[]
+  totalPages: number
+  totalElements: number
+  number: number
+  size: number
+  first: boolean
+  last: boolean
+}
+
 export interface PipelineStreamEvent {
   pipelineRunId: number | null
   step: 'RSS_COLLECT' | 'ARTICLE_SAVE' | 'TOPIC_CLUSTERING' | 'AI_SUMMARY' | 'COMPLETED'

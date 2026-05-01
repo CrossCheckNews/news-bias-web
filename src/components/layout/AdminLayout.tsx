@@ -6,6 +6,7 @@ import AppNav from './AppNav'
 function usePageTitle() {
   const { pathname } = useLocation()
   if (pathname.includes('/dashboard')) return 'Pipeline Dashboard'
+  if (pathname.includes('/history')) return 'Pipeline History'
   if (pathname.includes('/publishers')) return 'Publishers'
   if (pathname.includes('/topics')) return 'Topics'
   if (pathname.includes('/articles')) return 'Articles'

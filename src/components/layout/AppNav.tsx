@@ -2,7 +2,6 @@ import {
   AlignJustify,
   Cloud,
   FileText,
-  GitBranch,
   LayoutDashboard,
   Settings,
   User,
@@ -36,11 +35,6 @@ const NAV_ITEMS: Array<{ label: string; icon: LucideIcon; to: string }> = [
     to: `/admin/${ADMIN_SECRET_PATH}/publishers`,
   },
   {
-    label: 'Pipeline',
-    icon: GitBranch,
-    to: `/admin/${ADMIN_SECRET_PATH}/dashboard`,
-  },
-  {
     label: 'Pipeline History',
     icon: Cloud,
     to: `/admin/${ADMIN_SECRET_PATH}/history`,
@@ -72,7 +66,7 @@ export default function AppNav() {
           const isActive = location.pathname === to;
           return (
             <Link
-              key={to}
+              key={label}
               to={to}
               className={cn(
                 'flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors',

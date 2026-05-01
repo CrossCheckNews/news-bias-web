@@ -6,7 +6,6 @@ export interface TopicListParams {
   date?: string; // 'YYYY-MM-DD'
   page?: number;
   size?: number;
-  sort?: string;
 }
 
 export async function getTopics(

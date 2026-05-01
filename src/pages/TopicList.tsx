@@ -175,14 +175,12 @@ export default function PublisherListPage() {
             status: 'ACTIVE',
             page: pageParam,
             size: 20,
-            sort: 'createdAt,desc',
             date: today(),
           })
         : getTopics({
             status: 'ACTIVE',
             page: pageParam,
             size: 20,
-            sort: 'createdAt,desc',
           }),
     initialPageParam: 0,
     getNextPageParam: (lastPage) =>

@@ -1,20 +1,29 @@
 import { ExternalLink } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import StatusBadge from './StatusBadge'
 import type { PipelineHistoryRow } from '@/types/pipeline'
 
+const ADMIN_SECRET_PATH = import.meta.env.VITE_ADMIN_SECRET_PATH
+
 export default function PipelineHistoryTable({ rows }: { rows: PipelineHistoryRow[] }) {
+  const today = new Date().toISOString().slice(0, 10)
+  const to = `/admin/${ADMIN_SECRET_PATH}/history?date=${today}`
+
   return (
     <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
       <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
         <h2 className="text-base font-semibold text-slate-900">Recent Pipeline History</h2>
-        <button className="text-slate-600 text-xs font-bold hover:underline flex items-center gap-1">
+        <Link
+          to={to}
+          className="text-slate-600 text-xs font-bold hover:underline flex items-center gap-1"
+        >
           View Full Logs
           <ExternalLink className="w-3.5 h-3.5" />
-        </button>
+        </Link>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-auto max-h-[260px]">
         <table className="w-full text-left">
-          <thead>
+          <thead className="sticky top-0 z-10">
             <tr className="bg-slate-50 border-b border-slate-200">
               {['Executed At', 'Run', 'Step', 'Target', 'Status', 'Processed', 'Message'].map((h) => (
                 <th

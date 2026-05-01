@@ -6,6 +6,7 @@ import AdminLayout from '@/components/layout/AdminLayout';
 const Publisher = lazy(() => import('@/pages/admin/Publisher'));
 const PublisherForm = lazy(() => import('@/pages/admin/PublisherForm'));
 const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
+const Articles = lazy(() => import('@/pages/admin/Articles'));
 const PipelineHistory = lazy(() => import('@/pages/admin/PipelineHistory'));
 const Login = lazy(() => import('@/pages/admin/Login'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
@@ -48,6 +49,10 @@ export default function App() {
             <Route
               path={`/admin/${ADMIN_SECRET_PATH}/publishers/:publisherId/edit`}
               element={<PublisherForm />}
+            />
+            <Route
+              path={`/admin/${ADMIN_SECRET_PATH}/articles`}
+              element={<Articles />}
             />
             <Route
               path={`/admin/${ADMIN_SECRET_PATH}/history`}

@@ -1,9 +1,11 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
-import type { VariantProps } from "class-variance-authority"
+import { type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button-variants"
 
-import { buttonVariants } from "./button-variants"
+// eslint-disable-next-line react-refresh/only-export-components
+export { buttonVariants }
 
 function Button({
   className,

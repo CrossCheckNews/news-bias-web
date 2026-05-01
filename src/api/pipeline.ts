@@ -1,120 +1,152 @@
-import apiClient from '@/api/client'
+import apiClient from '@/api/client';
+import { parsePage, type PaginatedResponse } from '@/lib/pagination';
 import type {
   ActivePipeline,
   DashboardChartData,
   PipelineHistoriesPage,
+  PipelineHistoryItem,
   PipelineHistoryRow,
   PipelineCollectResult,
   PipelineMetrics,
-  PipelineRunStatus,
   PipelineStepStatus,
   PipelineStreamEvent,
   PublisherArticleCount,
-} from '@/types/pipeline'
+} from '@/types/pipeline';
 
 interface DashboardSummaryResponse {
-  totalArticles: number
-  totalTopics: number
-  todayCollectedArticles: number
-  failedJobs: number
-  lastCollectedAt: string | null
+  totalArticles: number;
+  totalTopics: number;
+  todayCollectedArticles: number;
+  successJobs: number;
+  failedJobs: number;
+  lastCollectedAt: string | null;
   recentRuns: Array<{
-    id: number
-    pipelineRunId: number
-    step: string
-    status: 'RUNNING' | 'SUCCESS' | 'FAILED'
-    fetchedCount: number
-    savedCount: number
-    clusteredCount: number
-    summarizedCount: number
-    processedCount: number
-    targetType?: string
-    targetName?: string
-    errorType?: string
-    errorMessage?: string
-    message: string
-    startedAt: string
-    finishedAt: string | null
-  }>
+    id: number;
+    pipelineRunId: number;
+    step: string;
+    status: 'RUNNING' | 'SUCCESS' | 'FAILED';
+    fetchedCount: number;
+    savedCount: number;
+    clusteredCount: number;
+    summarizedCount: number;
+    processedCount: number;
+    successCount: number;
+    failedCount: number;
+    targetType?: string;
+    targetName?: string;
+    errorType?: string;
+    errorMessage?: string;
+    message: string;
+    startedAt: string;
+    finishedAt: string | null;
+  }>;
 }
 
 interface DashboardChartsResponse {
-  articlesByPublisher: PublisherArticleCount[]
-  topicsByCountry: Array<{ name: string; count: number }>
-  pipelineStatusCounts: Array<{ name: 'RUNNING' | 'SUCCESS' | 'FAILED'; count: number }>
+  articlesByPublisher: PublisherArticleCount[];
+  topicsByCountry: Array<{ name: string; count: number }>;
+  pipelineStatusCounts: Array<{
+    name: 'RUNNING' | 'SUCCESS' | 'PARTIAL_FAILED' | 'FAILED';
+    count: number;
+  }>;
 }
 
-const COUNTRY_COLORS = ['#334155', '#0f766e', '#2563eb', '#9333ea', '#f59e0b', '#ef4444']
+const COUNTRY_COLORS = [
+  '#334155',
+  '#0f766e',
+  '#2563eb',
+  '#9333ea',
+  '#f59e0b',
+  '#ef4444',
+];
 
 function formatDateTime(value: string | null) {
-  if (!value) return '-'
+  if (!value) return '-';
   return new Date(value).toLocaleString('sv-SE', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-  })
+  });
 }
 
-function processedCount(run: DashboardSummaryResponse['recentRuns'][number]) {
-  if (typeof run.processedCount === 'number') return run.processedCount
-  return run.fetchedCount + run.savedCount + run.clusteredCount + run.summarizedCount
-}
-
-export async function getPipelineMetrics(): Promise<PipelineMetrics> {
-  const { data } = await apiClient.get<DashboardSummaryResponse>('/api/dashboard/summary')
+export async function getPipelineMetrics(
+  date?: string,
+): Promise<PipelineMetrics> {
+  const { data } = await apiClient.get<DashboardSummaryResponse>(
+    '/api/dashboard/summary',
+    { params: { ...(date && { date }) } },
+  );
 
   return {
     totalArticles: data.totalArticles,
     totalTopics: data.totalTopics,
     collectedToday: data.todayCollectedArticles,
     collectedTodayChangePct: 0,
+    successJobs: data.successJobs,
     failedJobs: data.failedJobs,
     lastFetchedAt: data.lastCollectedAt ?? new Date().toISOString(),
-  }
+  };
 }
 
 export async function getActivePipeline(): Promise<ActivePipeline> {
   return {
     pipelineId: `PC_${new Date().toISOString().slice(0, 10).replaceAll('-', '')}`,
     steps: [
-      { id: 'rss_collect', label: 'RSS Collect', status: 'WAITING', detail: 'Waiting for stream' },
+      { id: 'rss_collect', label: 'RSS Collect', status: 'WAITING' },
       { id: 'article_save', label: 'Article Save', status: 'WAITING' },
       { id: 'topic_cluster', label: 'Topic Cluster', status: 'WAITING' },
       { id: 'ai_summary', label: 'AI Summary', status: 'WAITING' },
       { id: 'completed', label: 'Completed', status: 'WAITING' },
     ],
-  }
+  };
 }
 
 export async function getPipelineHistory(): Promise<PipelineHistoryRow[]> {
-  const { data } = await apiClient.get<DashboardSummaryResponse>('/api/dashboard/summary')
+  const today = new Date().toISOString().slice(0, 10);
+  const { data } = await apiClient.get<PaginatedResponse<PipelineHistoryItem>>(
+    '/api/v1/pipeline/histories',
+    { params: { page: 0, size: 10, date: today } },
+  );
 
-  return data.recentRuns.map((run) => ({
+  return parsePage(data).items.map((run) => ({
     id: run.id,
     pipelineRunId: run.pipelineRunId,
-    executedAt: formatDateTime(run.finishedAt ?? run.startedAt),
+    executedAt: formatDateTime(run.finishedAt ?? run.startedAt ?? null),
     step: run.step,
-    status: run.status as PipelineRunStatus,
-    processed: processedCount(run),
+    status: run.status,
+    processed: run.processedCount,
+    successCount: run.successCount,
+    failedCount: run.failedCount,
     targetName: run.targetName,
     errorType: run.errorType,
     errorMessage: run.errorMessage,
-    message: run.errorMessage ? `${run.message}: ${run.errorMessage}` : run.message,
-  }))
+    message: run.errorMessage
+      ? `${run.message}: ${run.errorMessage}`
+      : run.message,
+  }));
 }
 
-export async function getArticlesByPublisher(): Promise<PublisherArticleCount[]> {
-  const { data } = await apiClient.get<DashboardChartsResponse>('/api/dashboard/charts')
-  return data.articlesByPublisher
+export async function getArticlesByPublisher(): Promise<
+  PublisherArticleCount[]
+> {
+  const { data } = await apiClient.get<DashboardChartsResponse>(
+    '/api/dashboard/charts',
+  );
+  return data.articlesByPublisher;
 }
 
-export async function getDashboardChartData(): Promise<DashboardChartData> {
-  const { data } = await apiClient.get<DashboardChartsResponse>('/api/dashboard/charts')
+export async function getDashboardChartData(
+  date?: string,
+): Promise<DashboardChartData> {
+  const { data } = await apiClient.get<DashboardChartsResponse>(
+    '/api/dashboard/charts',
+    { params: { ...(date && { date }) } },
+  );
   const statusCounts = Object.fromEntries(
     data.pipelineStatusCounts.map((item) => [item.name, item.count]),
-  ) as Record<string, number>
+  ) as Record<string, number>;
 
   return {
     topicsByCountry: data.topicsByCountry.map((item, index) => ({
@@ -123,36 +155,55 @@ export async function getDashboardChartData(): Promise<DashboardChartData> {
       color: COUNTRY_COLORS[index % COUNTRY_COLORS.length],
     })),
     pipelineResultStats: {
+      running: statusCounts.RUNNING ?? 0,
       success: statusCounts.SUCCESS ?? 0,
       failed: statusCounts.FAILED ?? 0,
-      partial: statusCounts.RUNNING ?? 0,
+      partialFailed: statusCounts.PARTIAL_FAILED ?? 0,
     },
-  }
+  };
 }
 
 export interface LatestRunDate {
-  runDate: string | null
-  today: string
+  runDate: string | null;
+  today: string;
 }
 
 export async function getPipelineHistories(
   page: number,
   size = 20,
+  statuses?: string[],
+  date?: string,
 ): Promise<PipelineHistoriesPage> {
-  const { data } = await apiClient.get<PipelineHistoriesPage>('/api/v1/pipeline/histories', {
-    params: { page, size },
-  })
-  return data
+  const { data } = await apiClient.get<PaginatedResponse<PipelineHistoryItem>>(
+    '/api/v1/pipeline/histories',
+    {
+      params: {
+        page,
+        size,
+        ...(statuses && statuses.length > 0 && { statuses }),
+        ...(date && { date }),
+      },
+      paramsSerializer: { indexes: null },
+    },
+  );
+  return parsePage(data);
 }
 
 export async function getLatestRunDate(): Promise<LatestRunDate> {
-  const { data } = await apiClient.get<LatestRunDate>('/api/v1/pipeline/latest-run-date')
-  return data
+  const { data } = await apiClient.get<LatestRunDate>(
+    '/api/v1/pipeline/latest-run-date',
+  );
+  return data;
 }
 
-export async function triggerPipelineCollect(fromHours = 1): Promise<PipelineCollectResult> {
-  const { data } = await apiClient.post<PipelineCollectResult>('/api/v1/pipeline/collect', { fromHours })
-  return data
+export async function triggerPipelineCollect(
+  fromHours = 1,
+): Promise<PipelineCollectResult> {
+  const { data } = await apiClient.post<PipelineCollectResult>(
+    '/api/v1/pipeline/collect',
+    { fromHours },
+  );
+  return data;
 }
 
 export function subscribePipelineStream(
@@ -160,29 +211,31 @@ export function subscribePipelineStream(
   onOpen?: () => void,
   onClose?: () => void,
 ) {
-  const source = new EventSource('/api/pipeline/stream')
+  const source = new EventSource('/api/pipeline/stream');
 
   source.onopen = () => {
-    onOpen?.()
-  }
+    onOpen?.();
+  };
 
   source.addEventListener('pipeline', (message) => {
-    onEvent(JSON.parse((message as MessageEvent).data) as PipelineStreamEvent)
-  })
+    onEvent(JSON.parse((message as MessageEvent).data) as PipelineStreamEvent);
+  });
 
   source.onerror = () => {
-    onClose?.()
-    source.close()
-  }
+    onClose?.();
+    source.close();
+  };
 
   return () => {
-    onClose?.()
-    source.close()
-  }
+    onClose?.();
+    source.close();
+  };
 }
 
-export function mapStreamStatus(status: PipelineStreamEvent['status']): PipelineStepStatus {
-  if (status === 'FAILED') return 'FAILED'
-  if (status === 'RUNNING') return 'RUNNING'
-  return 'SUCCESS'
+export function mapStreamStatus(
+  status: PipelineStreamEvent['status'],
+): PipelineStepStatus {
+  if (status === 'FAILED') return 'FAILED';
+  if (status === 'RUNNING') return 'RUNNING';
+  return 'SUCCESS';
 }

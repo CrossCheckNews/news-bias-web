@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import PipelineHistoryTable from '@/components/dashboard/PipelineHistoryTable'
 import type { PipelineHistoryRow } from '@/types/pipeline'
@@ -18,7 +19,7 @@ describe('PipelineHistoryTable', () => {
       message: 'RSS 피드 수집 실패: Connection timeout',
     }]
 
-    render(<PipelineHistoryTable rows={rows} />)
+    render(<MemoryRouter><PipelineHistoryTable rows={rows} /></MemoryRouter>)
 
     expect(screen.getByText('#42')).toBeInTheDocument()
     expect(screen.getByText('RSS_COLLECT')).toBeInTheDocument()

@@ -35,7 +35,7 @@ describe('publishers api adapter', () => {
     await expect(getPublishers()).resolves.toMatchObject({
       totalElements: 2,
       totalPages: 1,
-      content: [
+      items: [
         { name: 'CNN', politicalLeaning: 'LEFT' },
         { name: 'Chosun', politicalLeaning: 'RIGHT' },
       ],
@@ -45,20 +45,26 @@ describe('publishers api adapter', () => {
   it('normalizes paginated publisher responses', async () => {
     mockedGet.mockResolvedValue({
       data: {
-        content: [{ id: 7, name: 'BBC', country: 'GB', politicalLeaning: 'CENTER' }],
-        totalElements: 10,
-        totalPages: 2,
-        number: 1,
-        size: 5,
+        items: [{ id: 7, name: 'BBC', country: 'GB', politicalLeaning: 'CENTER' }],
+        pagination: {
+          page: 1,
+          size: 5,
+          totalElements: 10,
+          totalPages: 2,
+          first: false,
+          last: true,
+          hasNext: false,
+          hasPrevious: true,
+        },
       },
     })
 
     await expect(getPublishers({ page: 1, size: 5 })).resolves.toMatchObject({
       totalElements: 10,
       totalPages: 2,
-      number: 1,
+      page: 1,
       size: 5,
-      content: [{ id: 7, name: 'BBC' }],
+      items: [{ id: 7, name: 'BBC' }],
     })
   })
 })

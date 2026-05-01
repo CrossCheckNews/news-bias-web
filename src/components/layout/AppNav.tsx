@@ -20,14 +20,14 @@ const NAV_ITEMS: Array<{ label: string; icon: LucideIcon; to: string }> = [
     to: `/admin/${ADMIN_SECRET_PATH}/dashboard`,
   },
   {
-    label: 'Topics',
-    icon: AlignJustify,
-    to: `/admin/${ADMIN_SECRET_PATH}/topics`,
-  },
-  {
     label: 'Articles',
     icon: FileText,
     to: `/admin/${ADMIN_SECRET_PATH}/articles`,
+  },
+  {
+    label: 'Topics',
+    icon: AlignJustify,
+    to: `/admin/${ADMIN_SECRET_PATH}/topics`,
   },
   {
     label: 'Publishers',

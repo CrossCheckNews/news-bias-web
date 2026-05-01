@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import Dashboard from '@/pages/admin/Dashboard'
 import type {
@@ -99,9 +100,11 @@ function renderDashboard() {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   return render(
-    <QueryClientProvider client={client}>
-      <Dashboard />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={client}>
+        <Dashboard />
+      </QueryClientProvider>
+    </MemoryRouter>,
   )
 }
 

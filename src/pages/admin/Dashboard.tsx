@@ -35,10 +35,6 @@ const MetricsSection = (): React.ReactNode => {
     );
   }
 
-  const lastFetched = new Date(data.lastFetchedAt);
-  const dateStr = lastFetched.toLocaleDateString('sv');
-  const timeStr = lastFetched.toLocaleTimeString('en-GB');
-
   const metricCards: MetricCardItem[] = [
     {
       key: 'totalArticles',

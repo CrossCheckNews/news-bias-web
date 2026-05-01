@@ -1,18 +1,29 @@
-import { AlertTriangle, CheckCircle2, TrendingUp } from 'lucide-react'
-import ArticlesByPublisherChart from '@/components/dashboard/BarChart'
-import DonutChart from '@/components/dashboard/DonutChart'
-import MetricCard from '@/components/dashboard/MetricCard'
-import PipelineHistoryTable from '@/components/dashboard/PipelineHistoryTable'
-import PipelineOrchestration from '@/components/dashboard/PipelineOrchestration'
+import ArticlesByPublisherChart from '@/components/dashboard/BarChart';
+import DonutChart from '@/components/dashboard/DonutChart';
+import MetricCard from '@/components/dashboard/MetricCard';
+import PipelineHistoryTable from '@/components/dashboard/PipelineHistoryTable';
+import PipelineOrchestration from '@/components/dashboard/PipelineOrchestration';
 import {
   useArticlesByPublisher,
   useDashboardChartData,
   usePipelineHistory,
   usePipelineMetrics,
-} from '@/hooks/usePipeline'
+  useLatestRunDate,
+} from '@/hooks/usePipeline';
 
-function MetricsSection() {
-  const { data, isLoading } = usePipelineMetrics()
+type MetricCardItem = {
+  key: string;
+  label: string;
+  value: string | number;
+  subValue?: string;
+  to?: string;
+  badge?: React.ReactNode;
+};
+const ADMIN_SECRET_PATH = import.meta.env.VITE_ADMIN_SECRET_PATH;
+
+const MetricsSection = (): React.ReactNode => {
+  const { data, isLoading } = usePipelineMetrics();
+  const latestRunDateQuery = useLatestRunDate();
 
   if (isLoading || !data) {
     return (
@@ -21,82 +32,89 @@ function MetricsSection() {
           <div key={i} className="h-20 bg-slate-100 rounded-lg animate-pulse" />
         ))}
       </section>
-    )
+    );
   }
 
-  const lastFetched = new Date(data.lastFetchedAt)
-  const dateStr = lastFetched.toLocaleDateString('sv')
-  const timeStr = lastFetched.toLocaleTimeString('en-GB')
+  const lastFetched = new Date(data.lastFetchedAt);
+  const dateStr = lastFetched.toLocaleDateString('sv');
+  const timeStr = lastFetched.toLocaleTimeString('en-GB');
+
+  const metricCards: MetricCardItem[] = [
+    {
+      key: 'totalArticles',
+      label: 'Total Articles',
+      value: data.totalArticles,
+      to: `/admin/${ADMIN_SECRET_PATH}/articles`,
+    },
+    {
+      key: 'totalTopics',
+      label: 'Total Topics',
+      value: data.totalTopics,
+      to: `/admin/${ADMIN_SECRET_PATH}/topics`,
+    },
+    {
+      key: 'collectedToday',
+      label: 'Collected Today',
+      value: data.collectedToday,
+      to: `/admin/${ADMIN_SECRET_PATH}/history?status=SUCCESS`,
+    },
+    {
+      key: 'failedToday',
+      label: 'Failed Today',
+      value: data.failedJobs,
+      to: `/admin/${ADMIN_SECRET_PATH}/history?status=FAILED`,
+    },
+    {
+      key: 'lastFetched',
+      label: 'Last Fetched',
+      value: latestRunDateQuery.isPending
+        ? '…'
+        : (latestRunDateQuery.data?.runDate ?? '—'),
+    },
+  ];
 
   return (
     <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-      <MetricCard
-        label="Total Articles"
-        value={data.totalArticles}
-        badge={
-          <span className="flex items-center text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full gap-1">
-            <CheckCircle2 className="w-3 h-3" />
-            ACTIVE
-          </span>
-        }
-      />
-      <MetricCard
-        label="Total Topics"
-        value={data.totalTopics}
-        badge={
-          <span className="flex items-center text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full gap-1">
-            <CheckCircle2 className="w-3 h-3" />
-            ACTIVE
-          </span>
-        }
-      />
-      <MetricCard
-        label="Collected Today"
-        value={data.collectedToday}
-        badge={
-          <span className="flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full gap-0.5">
-            <TrendingUp className="w-3 h-3" />
-            +{data.collectedTodayChangePct}%
-          </span>
-        }
-      />
-      <MetricCard
-        label="Failed Jobs"
-        value={data.failedJobs}
-        badge={
-          <span className="flex items-center text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full gap-1">
-            <AlertTriangle className="w-3 h-3" />
-            CRITICAL
-          </span>
-        }
-      />
-      <MetricCard label="Last Fetched" value={dateStr} subValue={timeStr} />
+      {metricCards.map((card) => (
+        <MetricCard
+          key={card.key}
+          label={card.label}
+          value={card.value}
+          subValue={card.subValue}
+          badge={card.badge}
+          to={card.to}
+        />
+      ))}
     </section>
-  )
-}
+  );
+};
 
 function PipelineSection() {
   return (
     <section className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
       <PipelineOrchestration />
     </section>
-  )
+  );
 }
 
 function ChartsSection() {
-  const { data: publishers, isLoading: loadingPublishers } = useArticlesByPublisher()
-  const { data: chartData, isLoading: loadingCharts } = useDashboardChartData()
+  const { data: publishers, isLoading: loadingPublishers } =
+    useArticlesByPublisher();
+  const { data: chartData, isLoading: loadingCharts } = useDashboardChartData();
 
   const topicsTotalCount =
-    chartData?.topicsByCountry.reduce((sum, c) => sum + c.count, 0) ?? 0
+    chartData?.topicsByCountry.reduce((sum, c) => sum + c.count, 0) ?? 0;
   const pipelineTotal = chartData
     ? chartData.pipelineResultStats.success +
       chartData.pipelineResultStats.failed +
       chartData.pipelineResultStats.partial
-    : 0
-  const successPct = pipelineTotal > 0
-    ? Math.round((chartData!.pipelineResultStats.success / pipelineTotal) * 100)
-    : 0
+    : 0;
+  const successPct =
+    pipelineTotal > 0
+      ? Math.round(
+          (chartData!.pipelineResultStats.success / pipelineTotal) * 100,
+        )
+      : 0;
 
   return (
     <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -151,32 +169,56 @@ function ChartsSection() {
         ) : (
           <DonutChart
             segments={[
-              { value: chartData.pipelineResultStats.success, color: '#10b981', label: 'SUCCESS' },
-              { value: chartData.pipelineResultStats.failed, color: '#ef4444', label: 'FAILED' },
-              { value: chartData.pipelineResultStats.partial, color: '#f59e0b', label: 'PARTIAL' },
+              {
+                value: chartData.pipelineResultStats.success,
+                color: '#10b981',
+                label: 'SUCCESS',
+              },
+              {
+                value: chartData.pipelineResultStats.failed,
+                color: '#ef4444',
+                label: 'FAILED',
+              },
+              {
+                value: chartData.pipelineResultStats.partial,
+                color: '#f59e0b',
+                label: 'PARTIAL',
+              },
             ]}
             centerLabel={`${successPct}%`}
             centerSub="SUCCESS"
             legend={[
-              { label: 'SUCCESS', color: '#10b981', value: chartData.pipelineResultStats.success },
-              { label: 'FAILED', color: '#ef4444', value: chartData.pipelineResultStats.failed },
-              { label: 'PARTIAL', color: '#f59e0b', value: chartData.pipelineResultStats.partial },
+              {
+                label: 'SUCCESS',
+                color: '#10b981',
+                value: chartData.pipelineResultStats.success,
+              },
+              {
+                label: 'FAILED',
+                color: '#ef4444',
+                value: chartData.pipelineResultStats.failed,
+              },
+              {
+                label: 'PARTIAL',
+                color: '#f59e0b',
+                value: chartData.pipelineResultStats.partial,
+              },
             ]}
           />
         )}
       </div>
     </section>
-  )
+  );
 }
 
 function HistorySection() {
-  const { data, isLoading } = usePipelineHistory()
+  const { data, isLoading } = usePipelineHistory();
 
   if (isLoading || !data) {
-    return <div className="h-48 bg-slate-100 rounded-lg animate-pulse" />
+    return <div className="h-48 bg-slate-100 rounded-lg animate-pulse" />;
   }
 
-  return <PipelineHistoryTable rows={data} />
+  return <PipelineHistoryTable rows={data} />;
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -193,11 +235,17 @@ export default function Dashboard() {
       <footer className="px-6 py-4 border-t border-slate-200 text-slate-500 flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">
         <p>© 2026 CrossCheckNews Orchestrator v4.2.0-STABLE</p>
         <div className="flex gap-4">
-          <a className="hover:text-slate-700 transition-colors" href="#">Documentation</a>
-          <a className="hover:text-slate-700 transition-colors" href="#">API Keys</a>
-          <a className="hover:text-slate-700 transition-colors" href="#">System Health</a>
+          <a className="hover:text-slate-700 transition-colors" href="#">
+            Documentation
+          </a>
+          <a className="hover:text-slate-700 transition-colors" href="#">
+            API Keys
+          </a>
+          <a className="hover:text-slate-700 transition-colors" href="#">
+            System Health
+          </a>
         </div>
       </footer>
     </div>
-  )
+  );
 }

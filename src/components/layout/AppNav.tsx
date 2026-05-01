@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 
 const ADMIN_SECRET_PATH = '/admin/' + import.meta.env.VITE_ADMIN_SECRET_PATH;
-const CROSSCHECKNEWS_URL = import.meta.env.VITE_CROSSCHECKNEWS_URL ?? '/';
+const CROSSCHECKNEWS_URL = '/';
 
 const NAV_ITEMS: Array<{ label: string; icon: LucideIcon; to: string }> = [
   {

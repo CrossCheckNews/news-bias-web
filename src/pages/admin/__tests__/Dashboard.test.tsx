@@ -16,6 +16,7 @@ const mockActivePipeline = vi.fn()
 const mockHistory = vi.fn()
 const mockPublishers = vi.fn()
 const mockChartData = vi.fn()
+const mockLatestRunDate = vi.fn()
 
 vi.mock('@/hooks/usePipeline', () => ({
   usePipelineMetrics: () => mockMetrics(),
@@ -23,10 +24,12 @@ vi.mock('@/hooks/usePipeline', () => ({
   usePipelineHistory: () => mockHistory(),
   useArticlesByPublisher: () => mockPublishers(),
   useDashboardChartData: () => mockChartData(),
+  useLatestRunDate: () => mockLatestRunDate(),
 }))
 
 vi.mock('@/api/pipeline', () => ({
   triggerPipelineCollect: vi.fn(),
+  getLatestRunDate: vi.fn(),
 }))
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -111,6 +114,7 @@ describe('Dashboard', () => {
     mockHistory.mockReturnValue({ data: [makeHistoryRow()], isLoading: false })
     mockPublishers.mockReturnValue({ data: makePublishers(), isLoading: false })
     mockChartData.mockReturnValue({ data: makeChartData(), isLoading: false })
+    mockLatestRunDate.mockReturnValue({ data: { runDate: null, today: '2026-05-01' }, isPending: false })
   })
 
   it('renders MetricCard values from summary API', () => {

@@ -32,6 +32,10 @@ let mockActivePipeline = makeActivePipeline()
 
 vi.mock('@/hooks/usePipeline', () => ({
   useActivePipeline: () => mockActivePipeline,
+  useLatestRunDate: () => ({
+    data: { runDate: '2020-01-01', today: '2026-05-01' },
+    isPending: false,
+  }),
 }))
 
 vi.mock('@tanstack/react-query', () => ({
@@ -43,11 +47,18 @@ vi.mock('@tanstack/react-query', () => ({
     },
     isPending: false,
   }),
-  useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
+  useQueryClient: () => ({
+    invalidateQueries: mocks.invalidateQueries,
+    fetchQuery: vi.fn().mockResolvedValue({
+      runDate: '2020-01-01',
+      today: '2026-05-01',
+    }),
+  }),
 }))
 
 vi.mock('@/api/pipeline', () => ({
   triggerPipelineCollect: vi.fn(),
+  getLatestRunDate: vi.fn(),
 }))
 
 describe('PipelineOrchestration', () => {
@@ -61,6 +72,9 @@ describe('PipelineOrchestration', () => {
   it('renders each pipeline step with status and detail', () => {
     render(<PipelineOrchestration />)
 
+    expect(
+      screen.getByText(/last run date:\s*2020-01-01/i),
+    ).toBeInTheDocument()
     expect(screen.getByText('ID: RUN #42')).toBeInTheDocument()
     expect(screen.getByText('RSS Collect')).toBeInTheDocument()
     expect(screen.getByText('Article Save')).toBeInTheDocument()

@@ -40,7 +40,11 @@ const NAV_ITEMS: Array<{ label: string; icon: LucideIcon; to: string }> = [
     icon: GitBranch,
     to: `/admin/${ADMIN_SECRET_PATH}/dashboard`,
   },
-  { label: 'Sources', icon: Cloud, to: `/admin/${ADMIN_SECRET_PATH}/sources` },
+  {
+    label: 'Pipeline History',
+    icon: Cloud,
+    to: `/admin/${ADMIN_SECRET_PATH}/history`,
+  },
   {
     label: 'Settings',
     icon: Settings,

@@ -1,7 +1,11 @@
 import { ArrowLeft, SearchX } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function NotFound() {
+  const { pathname } = useLocation();
+  const backTo = pathname.startsWith('/admin/') ? '/admin/hello-new-s/dashboard' : '/';
+  const backLabel = pathname.startsWith('/admin/') ? 'Back to Dashboard' : 'Back to News';
+
   return (
     <main className="min-h-dvh bg-white px-6 py-10 text-neutral-900">
       <section className="mx-auto flex min-h-[calc(100dvh-5rem)] max-w-xl flex-col items-center justify-center text-center">
@@ -18,11 +22,11 @@ export default function NotFound() {
           다른 경로로 이동해주세요.
         </p>
         <Link
-          to="/"
+          to={backTo}
           className="mt-6 inline-flex items-center gap-2 rounded bg-neutral-950 px-4 py-2 text-sm font-bold text-white hover:bg-neutral-700"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to News
+          {backLabel}
         </Link>
       </section>
     </main>

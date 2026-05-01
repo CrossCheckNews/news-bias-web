@@ -5,13 +5,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev        # Start Vite dev server (proxies /api → http://localhost:8080)
-npm run build      # tsc -b && vite build (TypeScript errors block the build)
-npm run lint       # ESLint
-npm run preview    # Preview production build
+pnpm run dev        # Start Vite dev server (proxies /api → http://localhost:8080)
+pnpm run build      # tsc -b && vite build (TypeScript errors block the build)
+pnpm run lint       # ESLint
+pnpm run test:run   # Vitest test suite
+pnpm run test:e2e   # Playwright end-to-end tests
+pnpm run check      # lint + test:run + build
+pnpm run preview    # Preview production build
 ```
-
-No test runner is configured.
 
 ## Architecture
 
@@ -21,28 +22,31 @@ All `/api` requests are proxied to `http://localhost:8080` via Vite dev server c
 
 ### Routing (`src/App.tsx`)
 
-| Path                                                            | Page                     |
-| --------------------------------------------------------------- | ------------------------ |
-| `/`                                                             | `TopicListPage`          |
-| `/topics/:id`                                                   | `TopicDetailPage`        |
-| `/admin/${VITE_ADMIN_SECRET_PATH}`                              | `AdminPage`              |
-| `/admin/${VITE_ADMIN_SECRET_PATH}/publishers/new`               | `AdminPublisherFormPage` |
-| `/admin/${VITE_ADMIN_SECRET_PATH}/publishers/:publisherId/edit` | `AdminPublisherFormPage` |
+| Path                                                            | Page                   |
+| --------------------------------------------------------------- | ---------------------- |
+| `/login`                                                        | `Login`                |
+| `/`                                                             | `TopicList`            |
+| `/topics/:id`                                                   | `TopicDetail`          |
+| `/admin/${VITE_ADMIN_SECRET_PATH}`                              | redirects to dashboard |
+| `/admin/${VITE_ADMIN_SECRET_PATH}/dashboard`                    | `Dashboard`            |
+| `/admin/${VITE_ADMIN_SECRET_PATH}/publishers`                   | `Publisher`            |
+| `/admin/${VITE_ADMIN_SECRET_PATH}/publishers/new`               | `PublisherForm`        |
+| `/admin/${VITE_ADMIN_SECRET_PATH}/publishers/:publisherId/edit` | `PublisherForm`        |
 
 `VITE_ADMIN_SECRET_PATH` must be set in `.env` to reach admin pages.
 
 ### Data layer (`src/api/`)
 
 - `client.ts` — axios instance; reads `admin_token` from `sessionStorage` per request
-- `topics.ts` — `getTopics(params)`, `getTopic(id)`, `getTopicArticles(id)`
+- `topics.ts` — `getTopics(params)`, `getTopic(id)`; topic detail responses include articles
 - `publishers.ts` — full CRUD; includes `normalizePublisher()` which maps legacy `leaning` field → `politicalLeaning`
-- `auth.ts` — `login()` → stores token + expiry in `sessionStorage`
+- `auth.ts` — `login()` returns token metadata; login UI stores token + expiry in `sessionStorage`
 
 All API functions are consumed via TanStack Query (`@tanstack/react-query`). The `QueryClient` is created once in `main.tsx` and provided at the root.
 
 ### Types (`src/types/index.ts`)
 
-Key hierarchy: `TopicSummary` (list view) → `Topic extends TopicSummary` (detail, adds `leaningDistribution` and `countryDistribution`). `TopicArticle` embeds a full `Publisher`. `PoliticalLeaning = 'LEFT' | 'CENTER' | 'RIGHT'`.
+Key hierarchy: `TopicSummary` (list view) → `TopicDetail extends TopicSummary` (detail, adds title/category/model metadata and `articles`). `TopicArticle` stores article and publisher display fields (`publisherName`, `country`, `politicalLeaning`) rather than embedding a full `Publisher`. `PoliticalLeaning = 'LEFT' | 'CENTER' | 'RIGHT'`; article leaning values are `ArticleLeaning = 'CONSERVATIVE' | 'PROGRESSIVE'`.
 
 ### Styling
 
@@ -53,7 +57,7 @@ Key hierarchy: `TopicSummary` (list view) → `Topic extends TopicSummary` (deta
 
 ### Admin authentication
 
-Token stored in `sessionStorage` (not `localStorage`) with an expiry timestamp. `getToken()` in `AdminPage.tsx` auto-clears expired tokens. The admin path itself acts as a second factor via `VITE_ADMIN_SECRET_PATH`.
+Token stored in `sessionStorage` (not `localStorage`) with an expiry timestamp. Admin access is guarded by `AdminLayout`, which handles the authenticated admin shell. The admin path itself acts as a second factor via `VITE_ADMIN_SECRET_PATH`.
 
 ### Tab/filter pattern (TopicListPage)
 
@@ -91,8 +95,10 @@ When implementing:
 2. Understand routes, API usage, and state
 3. Make a short plan
 4. Implement
-5. Verify UI behavior
-6. Report changes
+5. Verify behavior manually
+6. Run the relevant tests (`pnpm run test:run` or `pnpm run test:e2e`)
+7. Run the full quality gate (`pnpm run check`)
+8. Report changes and verification results
 
 Do not ask unnecessary clarifying questions.
 Make reasonable assumptions and proceed.
@@ -100,6 +106,15 @@ Make reasonable assumptions and proceed.
 ## Verification Rules
 
 Verification is REQUIRED.
+
+Default implementation flow:
+
+1. Implement the requested feature or fix
+2. Verify behavior manually in the UI or relevant runtime path
+3. Run the relevant test command:
+   - `pnpm run test:run` for unit/integration coverage
+   - `pnpm run test:e2e` for browser workflow coverage
+4. Run `pnpm run check` as the final build/lint/test gate
 
 For every change:
 
@@ -111,7 +126,7 @@ For every change:
 
 If TypeScript is used:
 
-- ensure type errors do not break the build (`npm run build`)
+- ensure type errors do not break the build (`pnpm run build`)
 
 Never claim something works unless it was actually checked.
 

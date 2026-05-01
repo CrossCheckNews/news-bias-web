@@ -1,11 +1,21 @@
 export type PipelineStepStatus = 'SUCCESS' | 'RUNNING' | 'WAITING' | 'FAILED'
 export type PipelineRunStatus = 'SUCCESS' | 'FAILED' | 'PARTIAL_FAILED' | 'RUNNING'
 
+export interface PipelineStepEvent {
+  status: 'RUNNING' | 'SUCCESS' | 'FAILED'
+  message: string
+  progress: number
+  targetName?: string
+  errorMessage?: string
+  emittedAt: string
+}
+
 export interface PipelineStep {
   id: string
   label: string
   status: PipelineStepStatus
   detail?: string
+  events?: PipelineStepEvent[]
 }
 
 export interface ActivePipeline {

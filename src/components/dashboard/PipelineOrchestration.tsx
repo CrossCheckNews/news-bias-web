@@ -8,15 +8,14 @@ import {
   RefreshCw,
   XCircle,
 } from 'lucide-react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useActivePipeline } from '@/hooks/usePipeline';
-import { triggerPipelineCollect } from '@/api/pipeline';
-import type {
-  PipelineStep,
-  PipelineStepStatus,
-} from '@/types/pipeline';
-
+import { useActivePipeline, useLatestRunDate } from '@/hooks/usePipeline';
+import { getLatestRunDate, triggerPipelineCollect } from '@/api/pipeline';
+import type { PipelineStep, PipelineStepStatus } from '@/types/pipeline';
+import StepDetailModal from './StepDetailModal';
+import RunConfirmModal from './RunConfirmModal';
 const STATUS_TEXT: Record<PipelineStepStatus, string> = {
   SUCCESS: 'SUCCESS',
   RUNNING: 'RUNNING',
@@ -67,10 +66,14 @@ function StepIcon({ status }: { status: PipelineStepStatus }) {
 function StepNode({
   step,
   isLastStep,
+  onDetails,
 }: {
   step: PipelineStep;
   isLastStep: boolean;
+  onDetails: () => void;
 }) {
+  const canViewDetails = !isLastStep && step.status !== 'WAITING';
+
   return (
     <div className="flex flex-col items-center text-center">
       {isLastStep ? (
@@ -92,7 +95,17 @@ function StepNode({
         {STATUS_TEXT[step.status]}
       </p>
       {step.detail && (
-        <p className="text-[10px] text-slate-400 mt-1 italic">{step.detail}</p>
+        <p className="text-[10px] text-slate-400 mt-1 italic line-clamp-2">
+          {step.detail}
+        </p>
+      )}
+      {canViewDetails && (
+        <button
+          onClick={onDetails}
+          className="mt-2 text-[10px] font-semibold text-slate-500 hover:text-slate-800 underline underline-offset-2 transition-colors"
+        >
+          View Details
+        </button>
       )}
     </div>
   );
@@ -100,7 +113,12 @@ function StepNode({
 
 export default function PipelineOrchestration() {
   const queryClient = useQueryClient();
+  const latestRunDateQuery = useLatestRunDate();
   const activePipeline = useActivePipeline();
+  const [selectedStep, setSelectedStep] = useState<PipelineStep | null>(null);
+  const [confirmRunDate, setConfirmRunDate] = useState<string | null>(null);
+  const [isCheckingDate, setIsCheckingDate] = useState(false);
+
   const { mutate: runPipeline, isPending } = useMutation({
     mutationFn: () => triggerPipelineCollect(1),
     onMutate: () => {
@@ -110,6 +128,23 @@ export default function PipelineOrchestration() {
       queryClient.invalidateQueries({ queryKey: ['pipeline'] });
     },
   });
+
+  async function handleRunClick() {
+    setIsCheckingDate(true);
+    try {
+      const { runDate, today } = await queryClient.fetchQuery({
+        queryKey: ['pipeline', 'latest-run-date'],
+        queryFn: getLatestRunDate,
+      });
+      if (runDate === today) {
+        setConfirmRunDate(runDate);
+      } else {
+        runPipeline();
+      }
+    } finally {
+      setIsCheckingDate(false);
+    }
+  }
 
   if (!activePipeline.data) {
     return <div className="h-32 bg-slate-100 rounded animate-pulse" />;
@@ -129,16 +164,35 @@ export default function PipelineOrchestration() {
             Active Pipeline Orchestration
           </h2>
           <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-600 tabular-nums">
+              Last run date:{' '}
+              {latestRunDateQuery.isPending
+                ? '…'
+                : (latestRunDateQuery.data?.runDate ?? '—')}
+            </span>
             <button
-              onClick={() => runPipeline()}
-              disabled={isPending || !activePipeline.isStreamReady}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-cc-slate text-white text-xs font-bold rounded hover:opacity-80 transition-opacity disabled:opacity-40"
-              title={activePipeline.isStreamReady ? 'Run Pipeline' : 'Connecting pipeline stream'}
-            >
-              {isPending
-                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Running...</>
-                : <><Play className="w-3.5 h-3.5" fill="currentColor" />Run Pipeline</>
+              onClick={handleRunClick}
+              disabled={
+                isPending || isCheckingDate || !activePipeline.isStreamReady
               }
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-cc-slate text-white text-xs font-bold rounded hover:opacity-80 transition-opacity disabled:opacity-40"
+              title={
+                activePipeline.isStreamReady
+                  ? 'Run Pipeline'
+                  : 'Connecting pipeline stream'
+              }
+            >
+              {isPending || isCheckingDate ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Running...
+                </>
+              ) : (
+                <>
+                  <Play className="w-3.5 h-3.5" fill="currentColor" />
+                  Run Pipeline
+                </>
+              )}
             </button>
             <span className="text-xs font-mono bg-slate-100 text-slate-600 px-3 py-1 rounded border border-slate-200">
               ID: {pipelineId}
@@ -158,11 +212,26 @@ export default function PipelineOrchestration() {
                 key={step.id}
                 step={step}
                 isLastStep={i === steps.length - 1}
+                onDetails={() => setSelectedStep(step)}
               />
             ))}
           </div>
         </div>
       </div>
+      <StepDetailModal
+        step={selectedStep}
+        onClose={() => setSelectedStep(null)}
+      />
+      {confirmRunDate && (
+        <RunConfirmModal
+          runDate={confirmRunDate}
+          onConfirm={() => {
+            activePipeline.resetForNextRun();
+            runPipeline();
+          }}
+          onClose={() => setConfirmRunDate(null)}
+        />
+      )}
     </>
   );
 }

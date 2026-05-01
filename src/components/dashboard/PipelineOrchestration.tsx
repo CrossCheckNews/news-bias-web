@@ -14,7 +14,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActivePipeline, useLatestRunDate } from '@/hooks/usePipeline';
 import { getLatestRunDate, triggerPipelineCollect } from '@/api/pipeline';
 import type { PipelineStep, PipelineStepStatus } from '@/types/pipeline';
-import StepDetailModal from './StepDetailModal';
 import RunConfirmModal from './RunConfirmModal';
 const STATUS_TEXT: Record<PipelineStepStatus, string> = {
   SUCCESS: 'SUCCESS',
@@ -66,18 +65,21 @@ function StepIcon({ status }: { status: PipelineStepStatus }) {
 function StepNode({
   step,
   isLastStep,
-  onDetails,
 }: {
   step: PipelineStep;
   isLastStep: boolean;
-  onDetails: () => void;
 }) {
-  const canViewDetails = !isLastStep && step.status !== 'WAITING';
-
   return (
     <div className="flex flex-col items-center text-center">
       {isLastStep ? (
-        <div className="w-10 h-10 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center shadow-sm">
+        <div
+          className={cn(
+            'w-10 h-10 rounded-full flex items-center justify-center shadow-sm',
+            step.status === 'SUCCESS'
+              ? 'bg-emerald-500 text-white'
+              : 'bg-slate-200 text-slate-400',
+          )}
+        >
           <Flag className="w-5 h-5" />
         </div>
       ) : (
@@ -99,14 +101,6 @@ function StepNode({
           {step.detail}
         </p>
       )}
-      {canViewDetails && (
-        <button
-          onClick={onDetails}
-          className="mt-2 text-[10px] font-semibold text-slate-500 hover:text-slate-800 underline underline-offset-2 transition-colors"
-        >
-          View Details
-        </button>
-      )}
     </div>
   );
 }
@@ -115,7 +109,6 @@ export default function PipelineOrchestration() {
   const queryClient = useQueryClient();
   const latestRunDateQuery = useLatestRunDate();
   const activePipeline = useActivePipeline();
-  const [selectedStep, setSelectedStep] = useState<PipelineStep | null>(null);
   const [confirmRunDate, setConfirmRunDate] = useState<string | null>(null);
   const [isCheckingDate, setIsCheckingDate] = useState(false);
 
@@ -151,7 +144,9 @@ export default function PipelineOrchestration() {
   }
 
   const { pipelineId, steps } = activePipeline.data;
-  const completedCount = steps.filter((s) => s.status === 'SUCCESS').length;
+  const completedCount = steps
+    .slice(0, -1)
+    .filter((s) => s.status === 'SUCCESS').length;
   const progressPct =
     steps.length > 1 ? (completedCount / (steps.length - 1)) * 100 : 0;
 
@@ -200,7 +195,7 @@ export default function PipelineOrchestration() {
           </div>
         </div>
         <div className="relative">
-          <div className="absolute top-5 left-8 right-8 h-0.5 bg-slate-100">
+          <div className="absolute top-5 left-[10%] right-[10%] h-0.5 bg-slate-100 overflow-hidden">
             <div
               className="h-full bg-emerald-500 transition-all duration-500"
               style={{ width: `${progressPct}%` }}
@@ -212,16 +207,11 @@ export default function PipelineOrchestration() {
                 key={step.id}
                 step={step}
                 isLastStep={i === steps.length - 1}
-                onDetails={() => setSelectedStep(step)}
               />
             ))}
           </div>
         </div>
       </div>
-      <StepDetailModal
-        step={selectedStep}
-        onClose={() => setSelectedStep(null)}
-      />
       {confirmRunDate && (
         <RunConfirmModal
           runDate={confirmRunDate}

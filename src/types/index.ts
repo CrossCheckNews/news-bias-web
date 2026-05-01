@@ -44,15 +44,7 @@ export interface TopicArticle {
   politicalLeaning: PublisherLeaning;
 }
 
-export interface TopicPage {
-  content: TopicSummary[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-  last: boolean;
-  first: boolean;
-}
+export type TopicPage = import('@/lib/pagination').PageData<TopicSummary>;
 
 /** GET 응답·목록 항목 */
 export interface Publisher {

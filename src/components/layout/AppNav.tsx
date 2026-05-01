@@ -1,10 +1,4 @@
-import {
-  AlignJustify,
-  Cloud,
-  FileText,
-  LayoutDashboard,
-  User,
-} from 'lucide-react';
+import { Cloud, FileText, LayoutDashboard, User } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
@@ -22,11 +16,6 @@ const NAV_ITEMS: Array<{ label: string; icon: LucideIcon; to: string }> = [
     label: 'Articles',
     icon: FileText,
     to: `${ADMIN_SECRET_PATH}/articles`,
-  },
-  {
-    label: 'Topics',
-    icon: AlignJustify,
-    to: `${ADMIN_SECRET_PATH}/topics`,
   },
   {
     label: 'Publishers',

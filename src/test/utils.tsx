@@ -50,13 +50,15 @@ export function makeTopicSummary(overrides = {}) {
 
 export function makeTopicPage(overrides = {}) {
   return {
-    content: [makeTopicSummary()],
+    items: [makeTopicSummary()],
+    page: 0,
+    size: 20,
     totalElements: 1,
     totalPages: 1,
-    number: 0,
-    size: 20,
-    last: true,
     first: true,
+    last: true,
+    hasNext: false,
+    hasPrevious: false,
     ...overrides,
   }
 }

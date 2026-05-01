@@ -1,7 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
-import { Search } from 'lucide-react';
 
 import { BottomNav } from '@/components/home/BottomNav';
 import {
@@ -184,10 +183,10 @@ export default function PublisherListPage() {
           }),
     initialPageParam: 0,
     getNextPageParam: (lastPage) =>
-      lastPage.last ? undefined : (lastPage.number ?? 0) + 1,
+      lastPage.hasNext ? lastPage.page + 1 : undefined,
   });
 
-  const topics = data?.pages.flatMap((p) => p.content) ?? [];
+  const topics = data?.pages.flatMap((p) => p.items) ?? [];
   const dateGroups = groupByDate(topics);
 
   useEffect(() => {
@@ -208,20 +207,11 @@ export default function PublisherListPage() {
   return (
     <div className="min-h-dvh overflow-x-hidden bg-white text-neutral-900">
       <div className={cn(homeColumnClass, 'pb-24 sm:pb-28')}>
-        {/* Header */}
         <header className={cn('bg-white', homePaddingXClass)}>
-          {/* Brand row */}
-          <div className="flex items-center justify-between pb-3 pt-4">
-            <div className="w-8" />
+          <div className="flex w-full items-center justify-center pb-3 pt-4">
             <h1 className="font-cc-serif text-lg font-black tracking-[0.15em] text-black sm:text-xl">
               CROSSCHECK NEWS
             </h1>
-            <button
-              type="button"
-              className="text-neutral-600 hover:text-neutral-900"
-            >
-              <Search className="size-5" />
-            </button>
           </div>
 
           {/* Date section */}

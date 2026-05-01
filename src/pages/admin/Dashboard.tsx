@@ -167,7 +167,6 @@ function ChartsSection({ selectedDate }: { selectedDate: string }) {
 
   return (
     <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Articles by Publisher */}
       <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4">
           Articles by Publisher
@@ -183,7 +182,6 @@ function ChartsSection({ selectedDate }: { selectedDate: string }) {
         )}
       </div>
 
-      {/* Topics by Country */}
       <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
         <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4">
           Topics by Country

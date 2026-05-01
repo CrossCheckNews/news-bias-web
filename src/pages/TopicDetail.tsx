@@ -1,19 +1,26 @@
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Share2 } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Share2 } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
 
-import { getTopic } from '@/api/topics'
-import { BottomNav } from '@/components/home/BottomNav'
-import { homeColumnClass } from '@/components/home/homeLayout'
-import { cn } from '@/lib/utils'
-import type { PublisherLeaning as ArticleLeaning, TopicArticle, TopicDetail } from '@/types'
+import { getTopic } from '@/api/topics';
+import { BottomNav } from '@/components/home/BottomNav';
+import { homeColumnClass } from '@/components/home/homeLayout';
+import { cn } from '@/lib/utils';
+import type {
+  PublisherLeaning as ArticleLeaning,
+  TopicArticle,
+  TopicDetail,
+} from '@/types';
 
 // ── Constants ────────────────────────────────────────────────
 
-const LEANING_BADGE: Record<ArticleLeaning, { label: string; className: string }> = {
+const LEANING_BADGE: Record<
+  ArticleLeaning,
+  { label: string; className: string }
+> = {
   CONSERVATIVE: { label: 'CONSERVATIVE', className: 'bg-red-100 text-red-700' },
-  PROGRESSIVE:  { label: 'PROGRESSIVE',  className: 'bg-blue-100 text-blue-700' },
-}
+  PROGRESSIVE: { label: 'PROGRESSIVE', className: 'bg-blue-100 text-blue-700' },
+};
 
 const COUNTRY_LABEL: Record<string, string> = {
   US: 'US',
@@ -24,36 +31,45 @@ const COUNTRY_LABEL: Record<string, string> = {
   DE: 'Germany',
   FR: 'France',
   AU: 'Australia',
-}
+};
 
 // ── Helpers ──────────────────────────────────────────────────
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'long',
-    day: '2-digit',
-    year: 'numeric',
-  }).toUpperCase()
+  return new Date(iso)
+    .toLocaleDateString('en-US', {
+      month: 'long',
+      day: '2-digit',
+      year: 'numeric',
+    })
+    .toUpperCase();
 }
 
-function groupArticlesByCountry(articles: TopicArticle[]): [string, TopicArticle[]][] {
-  const map = new Map<string, TopicArticle[]>()
+function groupArticlesByCountry(
+  articles: TopicArticle[],
+): [string, TopicArticle[]][] {
+  const map = new Map<string, TopicArticle[]>();
   for (const a of articles) {
-    if (!map.has(a.country)) map.set(a.country, [])
-    map.get(a.country)!.push(a)
+    if (!map.has(a.country)) map.set(a.country, []);
+    map.get(a.country)!.push(a);
   }
-  return Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length)
+  return Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length);
 }
 
 // ── Components ───────────────────────────────────────────────
 
 function LeaningBadge({ leaning }: { leaning: ArticleLeaning }) {
-  const { label, className } = LEANING_BADGE[leaning]
+  const { label, className } = LEANING_BADGE[leaning];
   return (
-    <span className={cn('inline-block rounded px-1.5 py-0.5 text-[9px] font-bold tracking-widest uppercase', className)}>
+    <span
+      className={cn(
+        'inline-block rounded px-1.5 py-0.5 text-[9px] font-bold tracking-widest uppercase',
+        className,
+      )}
+    >
       {label}
     </span>
-  )
+  );
 }
 
 function ArticleItem({ article }: { article: TopicArticle }) {
@@ -82,11 +98,17 @@ function ArticleItem({ article }: { article: TopicArticle }) {
         View Original →
       </a>
     </div>
-  )
+  );
 }
 
-function CountrySection({ country, articles }: { country: string; articles: TopicArticle[] }) {
-  const label = COUNTRY_LABEL[country] ?? country
+function CountrySection({
+  country,
+  articles,
+}: {
+  country: string;
+  articles: TopicArticle[];
+}) {
+  const label = COUNTRY_LABEL[country] ?? country;
   return (
     <section className="bg-white px-4 sm:px-6">
       <h2 className="border-b border-neutral-200 py-3 text-xs font-bold uppercase tracking-widest text-neutral-900">
@@ -98,23 +120,16 @@ function CountrySection({ country, articles }: { country: string; articles: Topi
         ))}
       </div>
     </section>
-  )
+  );
 }
 
-function CrossCheckAnalysis() {
-  return (
-    <section className="bg-neutral-50 px-4 py-5 sm:px-6">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
-        CrossCheck Analysis
-      </p>
-      <p className="mt-2 text-sm italic leading-relaxed text-neutral-600">
-        CrossCheck analysts provide a comprehensive view of global developments.
-      </p>
-    </section>
-  )
-}
-
-function ContextualSynthesis({ summary, model }: { summary: string; model?: string }) {
+function ContextualSynthesis({
+  summary,
+  model,
+}: {
+  summary: string;
+  model?: string;
+}) {
   return (
     <section className="bg-white px-4 py-5 sm:px-6">
       <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-neutral-400">
@@ -127,34 +142,48 @@ function ContextualSynthesis({ summary, model }: { summary: string; model?: stri
         </p>
       )}
     </section>
-  )
+  );
 }
 
 function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded bg-neutral-200', className)} />
+  return (
+    <div className={cn('animate-pulse rounded bg-neutral-200', className)} />
+  );
 }
 
 // ── Page ─────────────────────────────────────────────────────
 
 export default function TopicDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const topicId = Number(id)
+  const { id } = useParams<{ id: string }>();
+  const topicId = Number(id);
 
-  const { data: topic, isLoading, isError } = useQuery<TopicDetail>({
+  const {
+    data: topic,
+    isLoading,
+    isError,
+  } = useQuery<TopicDetail>({
     queryKey: ['topic', topicId],
     queryFn: () => getTopic(topicId),
     enabled: !!topicId,
-  })
+  });
 
-  const articles = topic?.articles ?? []
-  const countryGroups = groupArticlesByCountry(articles)
+  const articles = topic?.articles ?? [];
+  const countryGroups = groupArticlesByCountry(articles);
 
   return (
     <div className="min-h-dvh overflow-x-hidden bg-neutral-50 text-neutral-900">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white">
-        <div className={cn(homeColumnClass, 'flex items-center justify-between px-4 py-3 sm:px-6')}>
-          <Link to="/" className="flex items-center text-neutral-700 hover:text-neutral-900">
+        <div
+          className={cn(
+            homeColumnClass,
+            'flex items-center justify-between px-4 py-3 sm:px-6',
+          )}
+        >
+          <Link
+            to="/"
+            className="flex items-center text-neutral-700 hover:text-neutral-900"
+          >
             <ArrowLeft className="size-5" />
           </Link>
           {topic?.category ? (
@@ -162,9 +191,14 @@ export default function TopicDetailPage() {
               {topic.category} · Perspective
             </span>
           ) : (
-            <span className="font-cc-serif text-sm font-bold tracking-tight">CrossCheck News</span>
+            <span className="font-cc-serif text-sm font-bold tracking-tight">
+              CrossCheck News
+            </span>
           )}
-          <button type="button" className="text-neutral-700 hover:text-neutral-900">
+          <button
+            type="button"
+            className="text-neutral-700 hover:text-neutral-900"
+          >
             <Share2 className="size-5" />
           </button>
         </div>
@@ -184,17 +218,12 @@ export default function TopicDetailPage() {
                 {topic.title}
               </h1>
               <p className="mt-3 text-[11px] font-semibold uppercase tracking-widest text-neutral-400">
-                {formatDate(topic.startDate)} · {topic.articleCount} Perspectives Analyzed
+                {formatDate(topic.startDate)} · {topic.articleCount}{' '}
+                Perspectives Analyzed
               </p>
             </>
           ) : null}
         </div>
-
-        {/* Thumbnail placeholder */}
-        {!isLoading && topic && (
-          <div className="h-44 w-full bg-neutral-200 sm:h-56" />
-        )}
-        {isLoading && <SkeletonBlock className="h-44 w-full rounded-none sm:h-56" />}
 
         {/* Error */}
         {isError && (
@@ -221,13 +250,15 @@ export default function TopicDetailPage() {
         {/* Analysis + Synthesis */}
         {!isLoading && topic && (
           <div className="mt-2 space-y-2">
-            <CrossCheckAnalysis />
-            <ContextualSynthesis summary={topic.aiSummary} model={topic.aiModel} />
+            <ContextualSynthesis
+              summary={topic.aiSummary}
+              model={topic.aiModel}
+            />
           </div>
         )}
       </div>
 
       <BottomNav />
     </div>
-  )
+  );
 }

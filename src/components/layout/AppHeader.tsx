@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface AppHeaderProps {
   title: string;
-  searchPlaceholder?: string;
 }
 
 const GITHUB_URL = import.meta.env.VITE_GITHUB_URL;

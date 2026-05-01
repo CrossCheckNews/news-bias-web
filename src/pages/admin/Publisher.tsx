@@ -17,12 +17,12 @@ const LEANING_STYLE: Record<PoliticalLeaning, string> = {
 };
 
 const columns = [
-  { label: 'Publisher', className: 'pl-6 pr-4' },
+  { label: 'Publisher', className: 'pl-6 pr-4 w-[250px]' },
   { label: 'RSS URL', className: 'px-5' },
   { label: 'Country', className: 'px-5 w-[100px]' },
   { label: 'Leaning', className: 'px-5 w-[110px]' },
   { label: 'Created At', className: 'px-5 w-[140px]' },
-  { label: '', className: 'pl-5 pr-6 w-[80px]' },
+  { label: '', className: 'pl-5 pr-6 w-[100px]' },
 ];
 
 export default function Publisher() {
@@ -42,9 +42,7 @@ export default function Publisher() {
       <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-slate-900">
-            Publishers
-          </h2>
+          <h2 className="text-base font-semibold text-slate-900">Publishers</h2>
           <div className="flex items-center gap-3">
             {data && (
               <span className="text-sm text-slate-500">

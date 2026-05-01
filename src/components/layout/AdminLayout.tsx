@@ -7,7 +7,6 @@ const usePageTitle = () => {
   const { pathname } = useLocation();
   if (pathname.includes('/dashboard')) return 'Pipeline Dashboard';
   if (pathname.includes('/articles')) return 'Articles';
-  if (pathname.includes('/topics')) return 'Topics';
   if (pathname.includes('/publishers')) return 'Publishers';
   if (pathname.includes('/history')) return 'Pipeline History';
   return 'Dashboard';

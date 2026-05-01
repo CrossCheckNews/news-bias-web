@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { X } from 'lucide-react'
 
 import type { PublisherFormData } from '@/api/publishers'
@@ -34,18 +34,14 @@ interface Props {
 }
 
 export function PublisherFormModal({ open, initial, onClose, onSubmit }: Props) {
-  const [form, setForm] = useState<PublisherFormData>(EMPTY_FORM)
+  if (!open) return null
+  return <PublisherFormModalInner initial={initial} onClose={onClose} onSubmit={onSubmit} />
+}
+
+function PublisherFormModalInner({ initial, onClose, onSubmit }: Omit<Props, 'open'>) {
+  const [form, setForm] = useState<PublisherFormData>(() => initial ? toForm(initial) : EMPTY_FORM)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (open) {
-      setForm(initial ? toForm(initial) : EMPTY_FORM)
-      setError('')
-    }
-  }, [open, initial])
-
-  if (!open) return null
 
   const set = <K extends keyof PublisherFormData>(
     field: K,

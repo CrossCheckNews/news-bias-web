@@ -129,6 +129,16 @@ export async function getDashboardChartData(): Promise<DashboardChartData> {
   }
 }
 
+export interface LatestRunDate {
+  runDate: string | null
+  today: string
+}
+
+export async function getLatestRunDate(): Promise<LatestRunDate> {
+  const { data } = await apiClient.get<LatestRunDate>('/api/v1/pipeline/latest-run-date')
+  return data
+}
+
 export async function triggerPipelineCollect(fromHours = 1): Promise<PipelineCollectResult> {
   const { data } = await apiClient.post<PipelineCollectResult>('/api/v1/pipeline/collect', { fromHours })
   return data

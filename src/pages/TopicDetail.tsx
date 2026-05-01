@@ -6,7 +6,7 @@ import { getTopic } from '@/api/topics'
 import { BottomNav } from '@/components/home/BottomNav'
 import { homeColumnClass } from '@/components/home/homeLayout'
 import { cn } from '@/lib/utils'
-import type { ArticleLeaning, TopicArticle, TopicDetail } from '@/types'
+import type { PublisherLeaning as ArticleLeaning, TopicArticle, TopicDetail } from '@/types'
 
 // ── Constants ────────────────────────────────────────────────
 

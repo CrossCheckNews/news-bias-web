@@ -1,11 +1,29 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import StatusBadge from '@/components/dashboard/StatusBadge';
+import { DatePicker } from '@/components/ui/date-picker';
 import { usePipelineHistories } from '@/hooks/usePipeline';
 import type { PipelineHistoryItem, PipelineRunStatus } from '@/types/pipeline';
 import { cn } from '@/lib/utils';
 
 const PAGE_SIZE = 20;
+const STATUS_FILTERS: PipelineRunStatus[] = [
+  'SUCCESS',
+  'PARTIAL_FAILED',
+  'FAILED',
+  'RUNNING',
+];
+
+const columns = [
+  { label: 'ID', className: 'pl-6 pr-2' },
+  { label: 'Step', className: 'px-5' },
+  { label: 'Status', className: 'px-5' },
+  { label: 'Target', className: 'px-5' },
+  { label: 'Counts', className: 'px-5' },
+  { label: 'Started At', className: 'px-5' },
+  { label: 'Duration', className: 'pl-5 pr-4' },
+];
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) return '-';
@@ -61,6 +79,33 @@ function DetailRow({
         )}
       >
         {value}
+      </span>
+    </div>
+  );
+}
+
+function CountBreakdown({
+  processed,
+  success,
+  failed,
+}: {
+  processed: number;
+  success?: number;
+  failed?: number;
+}) {
+  const successValue = success ?? processed;
+  const failedValue = failed ?? 0;
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
+      <span className="text-slate-900 font-bold">
+        P {processed.toLocaleString()}
+      </span>
+      <span className="text-emerald-700">
+        S {successValue.toLocaleString()}
+      </span>
+      <span className={failedValue > 0 ? 'text-red-600' : 'text-slate-400'}>
+        F {failedValue.toLocaleString()}
       </span>
     </div>
   );
@@ -124,9 +169,14 @@ function HistoryDrawer({
             />
             <DetailRow label="Target" value={row.targetName || '-'} mono />
             <DetailRow
-              label="Processed Count"
-              value={row.processedCount.toLocaleString()}
-              mono
+              label="Counts"
+              value={
+                <CountBreakdown
+                  processed={row.processedCount}
+                  success={row.successCount}
+                  failed={row.failedCount}
+                />
+              }
             />
             <DetailRow
               label="Started At"
@@ -173,19 +223,60 @@ function HistoryDrawer({
 }
 
 export default function PipelineHistory() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<PipelineHistoryItem | null>(null);
-  const { data, isLoading, isFetching } = usePipelineHistories(page, PAGE_SIZE);
 
-  const columns = [
-    { label: 'ID', className: 'pl-6 pr-2' },
-    { label: 'Step', className: 'px-5' },
-    { label: 'Status', className: 'px-5' },
-    { label: 'Target', className: 'px-5' },
-    { label: 'Processed', className: 'px-5' },
-    { label: 'Started At', className: 'px-5' },
-    { label: 'Duration', className: 'pl-5 pr-4' },
-  ];
+  const statusParams = [
+    ...searchParams.getAll('statuses'),
+    ...searchParams.getAll('status'),
+  ].filter((status): status is PipelineRunStatus =>
+    STATUS_FILTERS.includes(status as PipelineRunStatus),
+  );
+  const dateParam = searchParams.get('date') ?? '';
+
+  const { data, isLoading, isFetching } = usePipelineHistories(
+    page,
+    PAGE_SIZE,
+    statusParams.length > 0 ? statusParams : undefined,
+    dateParam || undefined,
+  );
+
+  function updateDateFilter(value: string) {
+    setPage(0);
+    setSearchParams((prev: URLSearchParams) => {
+      const next = new URLSearchParams(prev);
+      if (value) next.set('date', value);
+      else next.delete('date');
+      return next;
+    });
+  }
+
+  function toggleStatusFilter(status: PipelineRunStatus) {
+    setPage(0);
+    setSearchParams((prev: URLSearchParams) => {
+      const next = new URLSearchParams(prev);
+      const active = new Set([
+        ...next.getAll('statuses'),
+        ...next.getAll('status'),
+      ]);
+      next.delete('status');
+      next.delete('statuses');
+      if (active.has(status)) active.delete(status);
+      else active.add(status);
+      STATUS_FILTERS.filter((s) => active.has(s)).forEach((s) =>
+        next.append('statuses', s),
+      );
+      return next;
+    });
+  }
+
+  function clearFilters() {
+    setPage(0);
+    setSearchParams({});
+  }
+
+  const hasFilters = Boolean(statusParams.length > 0 || dateParam);
 
   return (
     <>
@@ -199,6 +290,54 @@ export default function PipelineHistory() {
               <span className="text-s text-slate-500">
                 Total {data.totalElements.toLocaleString()}
               </span>
+            )}
+          </div>
+
+          {/* Filter bar */}
+          <div className="px-6 py-3 border-b border-slate-200 flex items-center gap-4 bg-slate-50">
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
+                Date
+              </label>
+              <DatePicker
+                value={dateParam || undefined}
+                onChange={(v) => updateDateFilter(v ?? '')}
+                placeholder="Pick a date"
+              />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
+                Status
+              </label>
+              <div className="flex items-center gap-1 rounded border border-slate-200 bg-white p-1">
+                {STATUS_FILTERS.map((status) => {
+                  const active = statusParams.includes(status);
+                  return (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => toggleStatusFilter(status)}
+                      className={cn(
+                        'px-2 py-1 rounded text-[10px] font-bold transition-colors',
+                        active
+                          ? 'bg-slate-900 text-white'
+                          : 'text-slate-500 hover:bg-slate-100',
+                      )}
+                    >
+                      {status === 'PARTIAL_FAILED' ? 'PARTIAL' : status}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {hasFilters && (
+              <button
+                onClick={clearFilters}
+                className="ml-auto flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700 transition-colors"
+              >
+                <X className="w-3 h-3" />
+                Clear
+              </button>
             )}
           </div>
 
@@ -240,7 +379,7 @@ export default function PipelineHistory() {
                     </tr>
                   ))}
                 {!isLoading &&
-                  data?.content.map((row) => (
+                  data?.items.map((row) => (
                     <tr
                       key={row.id}
                       onClick={() => setSelected(row)}
@@ -266,8 +405,12 @@ export default function PipelineHistory() {
                           {row.targetName ?? '-'}
                         </div>
                       </td>
-                      <td className="px-5 py-4 font-bold font-mono text-sm text-slate-900 whitespace-nowrap">
-                        {row.processedCount.toLocaleString()}
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <CountBreakdown
+                          processed={row.processedCount}
+                          success={row.successCount}
+                          failed={row.failedCount}
+                        />
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap font-mono text-xs text-slate-700">
                         {formatDateTime(row.startedAt)}
@@ -277,7 +420,7 @@ export default function PipelineHistory() {
                       </td>
                     </tr>
                   ))}
-                {!isLoading && data?.content.length === 0 && (
+                {!isLoading && data?.items.length === 0 && (
                   <tr>
                     <td
                       colSpan={7}
@@ -294,7 +437,7 @@ export default function PipelineHistory() {
           {data && data.totalPages > 1 && (
             <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
               <span className="text-xs text-slate-500">
-                Page {data.number + 1} of {data.totalPages}
+                Page {data.page + 1} of {data.totalPages}
               </span>
               <div className="flex items-center gap-2">
                 <button

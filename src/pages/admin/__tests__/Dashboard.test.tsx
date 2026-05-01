@@ -41,6 +41,7 @@ function makeMetrics(overrides: Partial<PipelineMetrics> = {}): PipelineMetrics 
     totalTopics: 50,
     collectedToday: 30,
     collectedTodayChangePct: 5,
+    successJobs: 12,
     failedJobs: 2,
     lastFetchedAt: '2026-04-29T10:00:00Z',
     ...overrides,
@@ -66,7 +67,7 @@ function makeChartData(overrides: Partial<DashboardChartData> = {}): DashboardCh
       { country: 'US', count: 10, color: '#334155' },
       { country: 'KR', count: 5, color: '#0f766e' },
     ],
-    pipelineResultStats: { success: 8, failed: 1, partial: 0 },
+    pipelineResultStats: { success: 8, failed: 1, partialFailed: 0, running: 0 },
     ...overrides,
   }
 }

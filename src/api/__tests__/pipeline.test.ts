@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import apiClient from '@/api/client'
 import {
   getDashboardChartData,
+  getPipelineHistories,
   getPipelineHistory,
   getPipelineMetrics,
   mapStreamStatus,
@@ -30,6 +31,7 @@ describe('pipeline api adapter', () => {
         totalArticles: 120,
         totalTopics: 12,
         todayCollectedArticles: 7,
+        successJobs: 5,
         failedJobs: 2,
         lastCollectedAt: '2026-04-28T10:00:00',
         recentRuns: [],
@@ -40,29 +42,43 @@ describe('pipeline api adapter', () => {
       totalArticles: 120,
       totalTopics: 12,
       collectedToday: 7,
+      successJobs: 5,
       failedJobs: 2,
       lastFetchedAt: '2026-04-28T10:00:00',
+    })
+  })
+
+  it('requests dashboard metrics for the selected date', async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        totalArticles: 0,
+        totalTopics: 0,
+        todayCollectedArticles: 0,
+        successJobs: 0,
+        failedJobs: 0,
+        lastCollectedAt: null,
+        recentRuns: [],
+      },
+    })
+
+    await getPipelineMetrics('2026-05-01')
+
+    expect(mockedGet).toHaveBeenCalledWith('/api/dashboard/summary', {
+      params: { date: '2026-05-01' },
     })
   })
 
   it('maps step history with run id, target, and error details', async () => {
     mockedGet.mockResolvedValue({
       data: {
-        totalArticles: 0,
-        totalTopics: 0,
-        todayCollectedArticles: 0,
-        failedJobs: 1,
-        lastCollectedAt: null,
-        recentRuns: [{
+        items: [{
           id: 5,
           pipelineRunId: 42,
           step: 'RSS_COLLECT',
           status: 'FAILED',
-          fetchedCount: 0,
-          savedCount: 0,
-          clusteredCount: 0,
-          summarizedCount: 0,
           processedCount: 3,
+          successCount: 0,
+          failedCount: 3,
           targetName: 'Fox News',
           errorType: 'RSS_TIMEOUT',
           errorMessage: 'Connection timeout',
@@ -70,6 +86,16 @@ describe('pipeline api adapter', () => {
           startedAt: '2026-04-28T09:00:00',
           finishedAt: '2026-04-28T09:01:00',
         }],
+        pagination: {
+          page: 0,
+          size: 20,
+          totalElements: 1,
+          totalPages: 1,
+          first: true,
+          last: true,
+          hasNext: false,
+          hasPrevious: false,
+        },
       },
     })
 
@@ -95,6 +121,7 @@ describe('pipeline api adapter', () => {
         topicsByCountry: [{ name: 'US', count: 4 }, { name: 'KR', count: 2 }],
         pipelineStatusCounts: [
           { name: 'SUCCESS', count: 8 },
+          { name: 'PARTIAL_FAILED', count: 1 },
           { name: 'FAILED', count: 1 },
           { name: 'RUNNING', count: 1 },
         ],
@@ -106,7 +133,53 @@ describe('pipeline api adapter', () => {
         { country: 'US', count: 4 },
         { country: 'KR', count: 2 },
       ],
-      pipelineResultStats: { success: 8, failed: 1, partial: 1 },
+      pipelineResultStats: { success: 8, failed: 1, partialFailed: 1, running: 1 },
+    })
+  })
+
+  it('requests dashboard chart data for the selected date', async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        articlesByPublisher: [],
+        topicsByCountry: [],
+        pipelineStatusCounts: [],
+      },
+    })
+
+    await getDashboardChartData('2026-05-01')
+
+    expect(mockedGet).toHaveBeenCalledWith('/api/dashboard/charts', {
+      params: { date: '2026-05-01' },
+    })
+  })
+
+  it('requests histories with multiple status filters', async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        items: [],
+        pagination: {
+          page: 0,
+          size: 20,
+          totalElements: 0,
+          totalPages: 0,
+          first: true,
+          last: true,
+          hasNext: false,
+          hasPrevious: false,
+        },
+      },
+    })
+
+    await getPipelineHistories(0, 20, ['FAILED', 'PARTIAL_FAILED'], '2026-05-01')
+
+    expect(mockedGet).toHaveBeenCalledWith('/api/v1/pipeline/histories', {
+      params: {
+        page: 0,
+        size: 20,
+        statuses: ['FAILED', 'PARTIAL_FAILED'],
+        date: '2026-05-01',
+      },
+      paramsSerializer: { indexes: null },
     })
   })
 
@@ -133,6 +206,7 @@ describe('pipeline api adapter', () => {
         totalArticles: 0,
         totalTopics: 0,
         todayCollectedArticles: 0,
+        successJobs: 0,
         failedJobs: 0,
         lastCollectedAt: null,
         recentRuns: [],

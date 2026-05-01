@@ -1,4 +1,5 @@
 import type { PoliticalLeaning, Publisher, PublisherPage } from '@/types'
+import { parsePage, type PaginatedResponse } from '@/lib/pagination'
 import apiClient from './client'
 
 export interface PublisherListParams {
@@ -51,37 +52,26 @@ export async function getPublishers(params: PublisherListParams = {}): Promise<P
 
   // 배열 응답 (non-paginated)
   if (Array.isArray(data)) {
-    const content = data.map(normalizePublisher)
+    const items = data.map(normalizePublisher)
     return {
-      content,
-      totalElements: content.length,
+      items,
+      totalElements: items.length,
       totalPages: 1,
-      number: 0,
-      size: content.length,
+      page: params.page ?? 0,
+      size: items.length,
+      first: true,
+      last: true,
+      hasNext: false,
+      hasPrevious: false,
     }
   }
 
   // 페이지 응답
-  if (data == null || typeof data !== 'object') {
-    return {
-      content: [],
-      totalElements: 0,
-      totalPages: 0,
-      number: params.page ?? 0,
-      size: params.size ?? 10,
-    }
-  }
-  const page = data as Record<string, unknown>
-  const content = Array.isArray(page.content)
-    ? page.content.map(normalizePublisher)
-    : []
-  return {
-    content,
-    totalElements: Number(page.totalElements ?? content.length),
-    totalPages: Number(page.totalPages ?? 1),
-    number: Number(page.number ?? params.page ?? 0),
-    size: Number(page.size ?? params.size ?? 10),
-  }
+  const raw = data as PaginatedResponse<unknown>
+  return parsePage({
+    items: Array.isArray(raw.items) ? raw.items.map(normalizePublisher) : [],
+    pagination: raw.pagination,
+  })
 }
 
 export async function getPublisher(id: number): Promise<Publisher> {

@@ -1,25 +1,23 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
-import AppHeader from './AppHeader'
-import AppNav from './AppNav'
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import AppHeader from './AppHeader';
+import AppNav from './AppNav';
 
-function usePageTitle() {
-  const { pathname } = useLocation()
-  if (pathname.includes('/dashboard')) return 'Pipeline Dashboard'
-  if (pathname.includes('/history')) return 'Pipeline History'
-  if (pathname.includes('/publishers')) return 'Publishers'
-  if (pathname.includes('/topics')) return 'Topics'
-  if (pathname.includes('/articles')) return 'Articles'
-  if (pathname.includes('/sources')) return 'Sources'
-  if (pathname.includes('/settings')) return 'Settings'
-  return 'Dashboard'
-}
+const usePageTitle = () => {
+  const { pathname } = useLocation();
+  if (pathname.includes('/dashboard')) return 'Pipeline Dashboard';
+  if (pathname.includes('/articles')) return 'Articles';
+  if (pathname.includes('/topics')) return 'Topics';
+  if (pathname.includes('/publishers')) return 'Publishers';
+  if (pathname.includes('/history')) return 'Pipeline History';
+  return 'Dashboard';
+};
 
 export default function AdminLayout() {
-  const { authed } = useAuth()
-  const title = usePageTitle()
+  const { authed } = useAuth();
+  const title = usePageTitle();
 
-  if (!authed) return <Navigate to="/login" replace />
+  if (!authed) return <Navigate to="/login" replace />;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -31,5 +29,5 @@ export default function AdminLayout() {
         </div>
       </main>
     </div>
-  )
+  );
 }

@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 
 import {
-  createPublisher,
   getPublisher,
-  updatePublisher,
   type PublisherFormData,
 } from '@/api/publishers';
 import { cn } from '@/lib/utils';
@@ -15,10 +13,8 @@ import type { PoliticalLeaning, Publisher } from '@/types';
 const ADMIN_SECRET_PATH = import.meta.env.VITE_ADMIN_SECRET_PATH;
 
 const COUNTRY_OPTIONS = [
-  { label: '영국', value: 'GB' },
-  { label: '미국', value: 'US' },
   { label: '대한민국', value: 'KR' },
-  { label: '일본', value: 'JP' },
+  { label: '미국', value: 'US' },
 ];
 
 const LEANING_OPTIONS: {
@@ -52,17 +48,12 @@ function publisherToForm(p: Publisher): PublisherFormData {
 function PublisherFormBody({
   initialForm,
   initialRssValidated,
-  publisherId,
-  isEdit,
   back,
 }: {
   initialForm: PublisherFormData;
   initialRssValidated: boolean;
-  publisherId: string | undefined;
-  isEdit: boolean;
   back: () => void;
 }) {
-  const qc = useQueryClient();
   const [form, setForm] = useState<PublisherFormData>(initialForm);
   const [rssValidated, setRssValidated] = useState(initialRssValidated);
 
@@ -74,17 +65,6 @@ function PublisherFormBody({
     if (field === 'rssUrl') setRssValidated(false);
   };
 
-  const saveMutation = useMutation({
-    mutationFn: () =>
-      isEdit
-        ? updatePublisher(Number(publisherId), form)
-        : createPublisher(form),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['publishers'] });
-      back();
-    },
-  });
-
   const handleValidateRss = () => {
     try {
       new URL(form.rssUrl);
@@ -95,15 +75,9 @@ function PublisherFormBody({
     }
   };
 
-  const canSubmit =
-    Boolean(form.name.trim()) &&
-    Boolean(form.country) &&
-    Boolean(form.rssUrl.trim());
-
   return (
     <div className="flex flex-1 items-center justify-center p-6">
       <div className="w-full max-w-2xl">
-        {/* Form card */}
         <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
           {/* 기본 정보 */}
           <div className="p-6 space-y-4">
@@ -212,33 +186,14 @@ function PublisherFormBody({
             </Field>
           </div>
 
-          {/* Actions */}
-          <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
-            {saveMutation.isError ? (
-              <p className="text-sm text-red-500">
-                저장 중 오류가 발생했습니다.
-              </p>
-            ) : (
-              <span />
-            )}
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={back}
-                className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={() => saveMutation.mutate()}
-                disabled={!canSubmit || saveMutation.isPending}
-                className="flex items-center gap-2 rounded-lg bg-cc-slate px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                <Save className="w-4 h-4" />
-                {saveMutation.isPending ? '저장 중...' : '저장하기'}
-              </button>
-            </div>
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={back}
+              className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              닫기
+            </button>
           </div>
         </div>
       </div>
@@ -295,16 +250,14 @@ export default function PublisherForm() {
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col">
       <FormPageHeader
-        title={isEdit ? '언론사 수정' : '언론사 등록'}
-        description="언론사 기본 정보와 RSS 수집 설정을 관리합니다."
+        title={isEdit ? '언론사 상세' : '언론사 정보'}
+        description="언론사 기본 정보와 RSS 수집 설정을 확인합니다."
         onBack={back}
       />
       <PublisherFormBody
         key={isEdit ? publisherId : 'new'}
         initialForm={initialForm}
         initialRssValidated={initialRssValidated}
-        publisherId={publisherId}
-        isEdit={isEdit}
         back={back}
       />
     </div>

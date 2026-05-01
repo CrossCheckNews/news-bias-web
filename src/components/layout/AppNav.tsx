@@ -3,46 +3,40 @@ import {
   Cloud,
   FileText,
   LayoutDashboard,
-  Settings,
   User,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 
-const ADMIN_SECRET_PATH = import.meta.env.VITE_ADMIN_SECRET_PATH;
+const ADMIN_SECRET_PATH = '/admin/' + import.meta.env.VITE_ADMIN_SECRET_PATH;
 const CROSSCHECKNEWS_URL = import.meta.env.VITE_CROSSCHECKNEWS_URL ?? '/';
 
 const NAV_ITEMS: Array<{ label: string; icon: LucideIcon; to: string }> = [
   {
     label: 'Dashboard',
     icon: LayoutDashboard,
-    to: `/admin/${ADMIN_SECRET_PATH}/dashboard`,
+    to: `${ADMIN_SECRET_PATH}/dashboard`,
   },
   {
     label: 'Articles',
     icon: FileText,
-    to: `/admin/${ADMIN_SECRET_PATH}/articles`,
+    to: `${ADMIN_SECRET_PATH}/articles`,
   },
   {
     label: 'Topics',
     icon: AlignJustify,
-    to: `/admin/${ADMIN_SECRET_PATH}/topics`,
+    to: `${ADMIN_SECRET_PATH}/topics`,
   },
   {
     label: 'Publishers',
     icon: User,
-    to: `/admin/${ADMIN_SECRET_PATH}/publishers`,
+    to: `${ADMIN_SECRET_PATH}/publishers`,
   },
   {
     label: 'Pipeline History',
     icon: Cloud,
-    to: `/admin/${ADMIN_SECRET_PATH}/history`,
-  },
-  {
-    label: 'Settings',
-    icon: Settings,
-    to: `/admin/${ADMIN_SECRET_PATH}/settings`,
+    to: `${ADMIN_SECRET_PATH}/history`,
   },
 ];
 
@@ -53,10 +47,20 @@ export default function AppNav() {
     window.location.href = getCrossCheckNewsRootUrl();
   };
 
+  const handleAdminClick = () => {
+    window.location.href = ADMIN_SECRET_PATH;
+  };
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 border-r border-slate-200 bg-slate-50 flex flex-col py-4 z-40">
       <div className="px-6 py-4 flex flex-col gap-1 mb-4">
-        <span className="text-xl font-bold text-slate-900">CrossCheckNews</span>
+        <span
+          className="text-xl font-bold text-slate-900"
+          onClick={handleAdminClick}
+          style={{ cursor: 'pointer' }}
+        >
+          CrossCheckNews
+        </span>
         <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
           Data Orchestrator
         </span>
